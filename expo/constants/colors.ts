@@ -1,0 +1,31 @@
+export const COLORS = {
+  deepCharcoal: '#111111',
+  softIvory: '#F8F4EC',
+  champagneGold: '#C9A66B',
+  warmBeige: '#E7D8C2',
+  mutedRose: '#B76E79',
+  white: '#FFFFFF',
+  darkGrey: '#2A2A2A',
+  lightGrey: '#E5E5E5',
+  successGreen: '#2E7D32',
+  errorRed: '#C62828',
+} as const;
+
+export const STATUS_COLORS: Record<string, string> = {
+  Pending: '#C9A66B',
+  Approved: '#2E7D32',
+  Rejected: '#C62828',
+  Cancelled: '#2A2A2A',
+  Completed: '#2E7D32',
+  Paid: '#2E7D32',
+  Failed: '#C62828',
+  Refunded: '#B76E79',
+  Open: '#C9A66B',
+  'In Progress': '#B76E79',
+  Resolved: '#2E7D32',
+  Available: '#2E7D32',
+  Booked: '#C62828',
+  Maintenance: '#2A2A2A',
+  Scheduled: '#C9A66B',
+  'Checked-In': '#B76E79',
+};
