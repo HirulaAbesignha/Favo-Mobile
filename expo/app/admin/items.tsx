@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { itemApi } from '../../api/itemApi';
@@ -9,7 +9,8 @@ import CustomButton from '../../components/CustomButton';
 import ItemCard from '../../components/ItemCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
-import { Plus, Trash2 } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Plus, Trash2, Image as ImageIcon } from 'lucide-react-native';
 
 export default function ManageItemsScreen() {
   const router = useRouter();
@@ -23,6 +24,20 @@ export default function ManageItemsScreen() {
   const [deposit, setDeposit] = useState('');
   const [stock, setStock] = useState('');
   const [desc, setDesc] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 5],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
 
   const { data: items, isLoading } = useQuery({
     queryKey: ['items'],
@@ -33,8 +48,8 @@ export default function ManageItemsScreen() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () =>
-      itemApi.createItem({
+    mutationFn: async () => {
+      const res = await itemApi.createItem({
         itemName: name,
         category,
         size,
@@ -43,11 +58,25 @@ export default function ManageItemsScreen() {
         depositAmount: Number(deposit),
         description: desc,
         stockQuantity: Number(stock),
-      }),
+      });
+      
+      const newItem = res.data;
+
+      if (imageUri && newItem._id) {
+        const formData = new FormData();
+        formData.append('image', {
+          uri: imageUri,
+          name: 'item-image.jpg',
+          type: 'image/jpeg',
+        } as any);
+        await itemApi.uploadImage(newItem._id, formData);
+      }
+      return newItem;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['items'] });
       setShowForm(false);
-      setName(''); setCategory(''); setSize(''); setColor(''); setPrice(''); setDeposit(''); setStock(''); setDesc('');
+      setName(''); setCategory(''); setSize(''); setColor(''); setPrice(''); setDeposit(''); setStock(''); setDesc(''); setImageUri(null);
       Alert.alert('Success', 'Item created successfully');
     },
     onError: (err: any) => {
@@ -96,6 +125,18 @@ export default function ManageItemsScreen() {
             <CustomInput label="Deposit" placeholder="100" value={deposit} onChangeText={setDeposit} keyboardType="numeric" />
             <CustomInput label="Stock" placeholder="5" value={stock} onChangeText={setStock} keyboardType="numeric" />
             <CustomInput label="Description" placeholder="Description..." value={desc} onChangeText={setDesc} multiline numberOfLines={3} />
+            
+            <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+              {imageUri ? (
+                <Image source={{ uri: imageUri }} style={styles.previewImage} />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <ImageIcon size={24} color={COLORS.darkGrey} />
+                  <Text style={styles.imageText}>Upload Item Image</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             <CustomButton title="Create Item" onPress={handleCreate} loading={createMutation.isPending} />
           </View>
         )}
@@ -165,6 +206,30 @@ const styles = StyleSheet.create({
     fontWeight: '700' as const,
     color: COLORS.deepCharcoal,
     marginBottom: 12,
+  },
+  imagePicker: {
+    height: 120,
+    borderWidth: 1,
+    borderColor: COLORS.lightGrey,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.softIvory,
+  },
+  imageText: {
+    fontSize: 12,
+    color: COLORS.darkGrey,
+    marginTop: 8,
   },
   list: {
     paddingHorizontal: 16,
