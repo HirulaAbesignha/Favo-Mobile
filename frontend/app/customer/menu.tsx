@@ -19,13 +19,25 @@ export default function MenuScreen() {
 
   const menuSections = [
     {
+      title: 'Shop',
+      items: [
+        { icon: <LayoutGrid size={20} color={COLORS.champagneGold} />, label: 'Browse Products', onPress: () => router.push('/customer/items') },
+        { icon: <ShoppingBag size={20} color={COLORS.champagneGold} />, label: 'My Orders', onPress: () => router.push('/customer/bookings') },
+      ]
+    },
+    {
       title: 'Services',
       items: [
-        { icon: <LayoutGrid size={20} color={COLORS.champagneGold} />, label: 'Categories', onPress: () => router.push('/customer/items') },
-        { icon: <ShoppingBag size={20} color={COLORS.champagneGold} />, label: 'My Bookings', onPress: () => router.push('/customer/bookings') },
+        { icon: <CalendarClock size={20} color={COLORS.champagneGold} />, label: 'Book a Service', onPress: () => router.push('/customer/services') },
+        { icon: <CalendarClock size={20} color={COLORS.champagneGold} />, label: 'My Bookings', onPress: () => router.push('/customer/my-bookings') },
+        { icon: <MessageSquare size={20} color={COLORS.champagneGold} />, label: 'Complaints', onPress: () => router.push('/customer/complaints') },
+      ]
+    },
+    {
+      title: 'Others',
+      items: [
         { icon: <CreditCard size={20} color={COLORS.champagneGold} />, label: 'Payments', onPress: () => router.push('/customer/payments') },
         { icon: <CalendarClock size={20} color={COLORS.champagneGold} />, label: 'Visitors', onPress: () => router.push('/customer/visitors') },
-        { icon: <MessageSquare size={20} color={COLORS.champagneGold} />, label: 'Complaints', onPress: () => router.push('/customer/complaints') },
       ]
     },
     {

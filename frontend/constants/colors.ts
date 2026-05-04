@@ -14,6 +14,7 @@ export const COLORS = {
 export const STATUS_COLORS: Record<string, string> = {
   Pending: '#C9A66B',
   Approved: '#2E7D32',
+  Confirmed: '#2E7D32',
   Rejected: '#C62828',
   Cancelled: '#2A2A2A',
   Completed: '#2E7D32',

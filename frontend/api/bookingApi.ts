@@ -13,7 +13,8 @@ export const bookingApi = {
   getMyBookings: () => api.get('/bookings/my-bookings'),
   getAllBookings: () => api.get('/bookings'),
   getBookingById: (id: string) => api.get(`/bookings/${id}`),
-  updateStatus: (id: string, status: string) => api.put(`/bookings/${id}/status`, { status }),
+  updateStatus: (id: string, status: string, adminNote?: string) => 
+    api.put(`/bookings/${id}/status`, { status, adminNote }),
   cancelBooking: (id: string) => api.put(`/bookings/${id}/cancel`),
   deleteBooking: (id: string) => api.delete(`/bookings/${id}`),
 };

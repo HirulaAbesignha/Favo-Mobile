@@ -24,7 +24,8 @@ export default function ItemListScreen() {
       const res = await itemApi.getItems(
         selectedCategory && selectedCategory !== 'All' ? { category: selectedCategory } : {}
       );
-      return res.data;
+      // Filter for Products only
+      return res.data.filter((i: any) => i.itemType !== 'Service');
     },
   });
 

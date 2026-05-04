@@ -37,7 +37,7 @@ export default function ItemCard({ item, onPress }: Props) {
         <Text style={styles.meta}>
           {item.size} · {item.color}
         </Text>
-        <Text style={styles.price}>Rs. {(item.price || (item as any).rentalPrice || 0).toLocaleString()}</Text>
+        <Text style={styles.price}>Rs. {(item.price || 0).toLocaleString()}</Text>
       </View>
     </TouchableOpacity>
   );

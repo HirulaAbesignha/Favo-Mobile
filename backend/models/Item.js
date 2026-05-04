@@ -7,6 +7,11 @@ const itemSchema = new mongoose.Schema(
       required: [true, 'Category is required'],
       trim: true,
     },
+    itemType: {
+      type: String,
+      enum: ['Product', 'Service'],
+      default: 'Product',
+    },
     itemName: {
       type: String,
       required: [true, 'Item name is required'],

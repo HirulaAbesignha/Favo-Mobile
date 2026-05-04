@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingApi } from '../../api/bookingApi';
@@ -5,10 +6,12 @@ import { COLORS } from '../../constants/colors';
 import StatusBadge from '../../components/StatusBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
-import { CheckCircle, XCircle, ShoppingBag } from 'lucide-react-native';
+import CustomInput from '../../components/CustomInput';
+import { CheckCircle, XCircle, ShoppingBag, MessageCircle } from 'lucide-react-native';
 
-export default function ManageBookingsScreen() {
+export default function ManageOrdersScreen() {
   const queryClient = useQueryClient();
+  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['all-bookings'],
@@ -19,14 +22,14 @@ export default function ManageBookingsScreen() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      bookingApi.updateStatus(id, status),
+    mutationFn: ({ id, status, note }: { id: string; status: string; note?: string }) =>
+      bookingApi.updateStatus(id, status, note),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['items'] });
     },
     onError: (err: any) => {
-      Alert.alert('Error', err?.response?.data?.message || 'Failed to update booking');
+      Alert.alert('Error', err?.response?.data?.message || 'Failed to update order');
     },
   });
 
@@ -35,12 +38,12 @@ export default function ManageBookingsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Manage Bookings</Text>
+        <Text style={styles.title}>Manage Orders</Text>
       </View>
 
       <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
         {bookings?.length === 0 ? (
-          <EmptyState message="No bookings found" />
+          <EmptyState message="No orders found" />
         ) : (
           bookings?.map((booking: any) => (
             <View key={booking._id} style={styles.card}>
@@ -52,8 +55,7 @@ export default function ManageBookingsScreen() {
                   <Text style={styles.itemName}>{booking.itemId?.itemName || 'Item'}</Text>
                   <Text style={styles.customer}>{booking.userId?.name || 'Customer'}</Text>
                   <Text style={styles.date}>
-                    {new Date(booking.rentalStartDate).toLocaleDateString()} —{' '}
-                    {new Date(booking.rentalEndDate).toLocaleDateString()}
+                    Order Date: {new Date(booking.bookingDate || booking.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
                 <StatusBadge status={booking.status} />
@@ -62,26 +64,46 @@ export default function ManageBookingsScreen() {
               <View style={styles.divider} />
 
               <View style={styles.cardFooter}>
-                <Text style={styles.total}>${booking.totalAmount}</Text>
-                {booking.status === 'Pending' && (
-                  <View style={styles.actions}>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, { backgroundColor: COLORS.successGreen + '15' }]}
-                      onPress={() => updateMutation.mutate({ id: booking._id, status: 'Approved' })}
-                    >
-                      <CheckCircle size={16} color={COLORS.successGreen} />
-                      <Text style={[styles.actionText, { color: COLORS.successGreen }]}>Approve</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, { backgroundColor: COLORS.errorRed + '12' }]}
-                      onPress={() => updateMutation.mutate({ id: booking._id, status: 'Rejected' })}
-                    >
-                      <XCircle size={16} color={COLORS.errorRed} />
-                      <Text style={[styles.actionText, { color: COLORS.errorRed }]}>Reject</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                 <Text style={styles.total}>Rs. {booking.totalAmount}</Text>
+                 
+                 {booking.status === 'Pending' && (
+                   <View style={{ flex: 1, marginLeft: 16 }}>
+                     <CustomInput 
+                       placeholder="Add confirmation note..." 
+                       value={adminNotes[booking._id] || ''} 
+                       onChangeText={(text) => setAdminNotes(prev => ({ ...prev, [booking._id]: text }))}
+                       containerStyle={{ marginBottom: 0 }}
+                     />
+                   </View>
+                 )}
               </View>
+
+              {booking.status === 'Pending' && (
+                <View style={[styles.actions, { marginTop: 12, justifyContent: 'flex-end' }]}>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: COLORS.successGreen + '15' }]}
+                    onPress={() => updateMutation.mutate({ 
+                      id: booking._id, 
+                      status: 'Approved', 
+                      note: adminNotes[booking._id] 
+                    })}
+                  >
+                    <CheckCircle size={16} color={COLORS.successGreen} />
+                    <Text style={[styles.actionText, { color: COLORS.successGreen }]}>Approve</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: COLORS.errorRed + '12' }]}
+                    onPress={() => updateMutation.mutate({ 
+                      id: booking._id, 
+                      status: 'Rejected', 
+                      note: adminNotes[booking._id] 
+                    })}
+                  >
+                    <XCircle size={16} color={COLORS.errorRed} />
+                    <Text style={[styles.actionText, { color: COLORS.errorRed }]}>Reject</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           ))
         )}

@@ -5,7 +5,7 @@ export interface ItemData {
   category: string;
   size: string;
   color: string;
-  rentalPrice: number;
+  price: number;
   depositAmount: number;
   description?: string;
   stockQuantity: number;

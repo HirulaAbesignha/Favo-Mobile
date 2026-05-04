@@ -6,7 +6,7 @@ import { complaintApi } from '../../api/complaintApi';
 import { paymentApi } from '../../api/paymentApi';
 import { COLORS } from '../../constants/colors';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { Package, CalendarDays, AlertCircle, DollarSign, TrendingUp, Users } from 'lucide-react-native';
+import { Package, CalendarDays, AlertCircle, Banknote, TrendingUp, Users } from 'lucide-react-native';
 
 export default function AdminDashboardScreen() {
   const { data: items } = useQuery({
@@ -47,7 +47,7 @@ export default function AdminDashboardScreen() {
 
   const stats = [
     { label: 'Total Items', value: items?.length || 0, icon: <Package size={22} color={COLORS.champagneGold} />, bg: COLORS.champagneGold + '15' },
-    { label: 'Bookings', value: bookings?.length || 0, icon: <CalendarDays size={22} color={COLORS.mutedRose} />, bg: COLORS.mutedRose + '12' },
+    { label: 'Orders', value: bookings?.length || 0, icon: <CalendarDays size={22} color={COLORS.mutedRose} />, bg: COLORS.mutedRose + '12' },
     { label: 'Pending', value: pendingBookings, icon: <TrendingUp size={22} color={COLORS.deepCharcoal} />, bg: COLORS.deepCharcoal + '08' },
     { label: 'Complaints', value: openComplaints, icon: <AlertCircle size={22} color={COLORS.errorRed} />, bg: COLORS.errorRed + '10' },
   ];
@@ -73,10 +73,10 @@ export default function AdminDashboardScreen() {
 
       <View style={styles.revenueCard}>
         <View style={styles.revenueHeader}>
-          <DollarSign size={20} color={COLORS.white} />
+          <Banknote size={20} color={COLORS.white} />
           <Text style={styles.revenueTitle}>Total Revenue</Text>
         </View>
-        <Text style={styles.revenueValue}>${totalRevenue.toLocaleString()}</Text>
+        <Text style={styles.revenueValue}>Rs. {totalRevenue.toLocaleString()}</Text>
         <Text style={styles.revenueSub}>From all payment records</Text>
       </View>
 
@@ -86,7 +86,7 @@ export default function AdminDashboardScreen() {
           <View style={styles.activityRow}>
             <Users size={16} color={COLORS.darkGrey} />
             <Text style={styles.activityText}>
-              {bookings?.length || 0} total bookings across the platform
+              {bookings?.length || 0} total orders across the platform
             </Text>
           </View>
           <View style={styles.activityRow}>

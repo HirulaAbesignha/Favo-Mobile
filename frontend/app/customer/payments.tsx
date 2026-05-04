@@ -42,7 +42,7 @@ export default function MyPaymentsScreen() {
               </View>
               <View style={styles.divider} />
               <View style={styles.cardFooter}>
-                <Text style={styles.amount}>${payment.amount}</Text>
+                <Text style={styles.amount}>Rs. {payment.amount}</Text>
                 <Text style={styles.date}>
                   {new Date(payment.paymentDate).toLocaleDateString()}
                 </Text>

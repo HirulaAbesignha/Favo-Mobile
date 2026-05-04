@@ -12,7 +12,7 @@ import CustomInput from '../../components/CustomInput';
 import { paymentApi } from '../../api/paymentApi';
 import { Modal } from 'react-native';
 
-export default function MyBookingsScreen() {
+export default function MyOrdersScreen() {
   const queryClient = useQueryClient();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -20,18 +20,19 @@ export default function MyBookingsScreen() {
   const [paymentMethod, setPaymentMethod] = useState('Card');
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['my-bookings'],
+    queryKey: ['my-orders'],
     queryFn: async () => {
       const res = await bookingApi.getMyBookings();
-      return res.data;
+      // Filter for Product type items
+      return res.data.filter((b: any) => b.itemId?.itemType !== 'Service');
     },
   });
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => bookingApi.cancelBooking(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
-      Alert.alert('Success', 'Booking cancelled successfully');
+      queryClient.invalidateQueries({ queryKey: ['my-orders'] });
+      Alert.alert('Success', 'Order cancelled successfully');
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.response?.data?.message || 'Failed to cancel booking');
@@ -41,7 +42,7 @@ export default function MyBookingsScreen() {
   const paymentMutation = useMutation({
     mutationFn: (data: any) => paymentApi.createPayment(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['my-orders'] });
       queryClient.invalidateQueries({ queryKey: ['my-payments'] });
       setShowPaymentModal(false);
       Alert.alert('Success', 'Payment processed successfully (Mock)');
@@ -52,7 +53,7 @@ export default function MyBookingsScreen() {
   });
 
   const handleCancel = (id: string) => {
-    Alert.alert('Cancel Booking', 'Are you sure you want to cancel this booking?', [
+    Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
       { text: 'No', style: 'cancel' },
       {
         text: 'Yes, Cancel',
@@ -84,12 +85,12 @@ export default function MyBookingsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>My Bookings</Text>
+        <Text style={styles.title}>My Orders</Text>
       </View>
 
       <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
         {bookings?.length === 0 ? (
-          <EmptyState message="You have no bookings yet" />
+          <EmptyState message="You have no orders yet" />
         ) : (
           bookings?.map((booking: any) => (
             <View key={booking._id} style={styles.card}>
@@ -100,17 +101,18 @@ export default function MyBookingsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.itemName}>{booking.itemId?.itemName || 'Item'}</Text>
                   <Text style={styles.date}>
-                    {new Date(booking.rentalStartDate).toLocaleDateString()} —{' '}
-                    {new Date(booking.rentalEndDate).toLocaleDateString()}
+                    Order Date: {new Date(booking.bookingDate || booking.createdAt).toLocaleDateString()}
                   </Text>
                 </View>
-                <StatusBadge status={booking.status} />
+                {booking.status !== 'Pending' && (
+                  <StatusBadge status={booking.status === 'Approved' ? 'Confirmed' : booking.status} />
+                )}
               </View>
 
               <View style={styles.divider} />
 
               <View style={styles.cardFooter}>
-                <Text style={styles.total}>Total: ${booking.totalAmount}</Text>
+                <Text style={styles.total}>Total: Rs. {booking.totalAmount}</Text>
                 {booking.status === 'Pending' && (
                   <TouchableOpacity
                     onPress={() => handleCancel(booking._id)}
@@ -151,7 +153,7 @@ export default function MyBookingsScreen() {
             <Text style={styles.modalSubtitle}>
               Item: {selectedBooking?.itemId?.itemName}
             </Text>
-            <Text style={styles.modalAmount}>Total: ${selectedBooking?.totalAmount}</Text>
+            <Text style={styles.modalAmount}>Total: Rs. {selectedBooking?.totalAmount}</Text>
 
             <Text style={styles.label}>Select Payment Method</Text>
             <View style={styles.methodRow}>

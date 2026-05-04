@@ -56,7 +56,7 @@ export default function ManagePaymentsScreen() {
               </View>
               <View style={styles.divider} />
               <View style={styles.cardFooter}>
-                <Text style={styles.amount}>${payment.amount}</Text>
+                <Text style={styles.amount}>Rs. {payment.amount}</Text>
                 {payment.paymentStatus === 'Pending' && (
                   <TouchableOpacity
                     style={styles.actionBtn}

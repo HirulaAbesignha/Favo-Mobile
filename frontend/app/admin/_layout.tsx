@@ -36,7 +36,7 @@ export default function AdminTabs() {
       <Tabs.Screen
         name="bookings"
         options={{
-          title: 'Bookings',
+          title: 'Orders',
           tabBarIcon: ({ color, size }) => <CalendarDays size={size} color={color} />,
         }}
       />

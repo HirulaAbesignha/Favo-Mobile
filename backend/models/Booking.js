@@ -10,7 +10,6 @@ const bookingSchema = new mongoose.Schema(
     itemId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Item',
-      required: true,
     },
     bookingDate: {
       type: Date,
@@ -35,6 +34,10 @@ const bookingSchema = new mongoose.Schema(
       default: 'Pending',
     },
     notes: {
+      type: String,
+      trim: true,
+    },
+    adminNote: {
       type: String,
       trim: true,
     },

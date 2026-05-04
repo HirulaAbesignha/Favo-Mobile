@@ -25,6 +25,7 @@ export default function ManageItemsScreen() {
   const [deposit, setDeposit] = useState('');
   const [stock, setStock] = useState('');
   const [desc, setDesc] = useState('');
+  const [type, setType] = useState<'Product' | 'Service'>('Product');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
 
@@ -59,6 +60,7 @@ export default function ManageItemsScreen() {
         price: Number(price),
         description: desc,
         stockQuantity: Number(stock),
+        itemType: type,
       });
       
       const newItem = res.data;
@@ -107,6 +109,7 @@ export default function ManageItemsScreen() {
         price: Number(price),
         description: desc,
         stockQuantity: Number(stock),
+        itemType: type,
       });
 
       if (imageUri && !imageUri.startsWith('http')) {
@@ -165,6 +168,7 @@ export default function ManageItemsScreen() {
     setDesc('');
     setImageUri(null);
     setEditingItem(null);
+    setType('Product');
   };
 
   const handleEdit = (item: any) => {
@@ -177,6 +181,7 @@ export default function ManageItemsScreen() {
     setStock(item.stockQuantity.toString());
     setDesc(item.description || '');
     setImageUri(item.image || null);
+    setType(item.itemType || 'Product');
     setShowForm(true);
   };
 
@@ -215,6 +220,21 @@ export default function ManageItemsScreen() {
             <Text style={styles.formTitle}>{editingItem ? 'Edit Item' : 'Add New Item'}</Text>
             <CustomInput label="Item Name" placeholder="Elegant Evening Gown" value={name} onChangeText={setName} />
             <CustomInput label="Category" placeholder="Dresses" value={category} onChangeText={setCategory} />
+            
+            <View style={styles.typeSelector}>
+              <TouchableOpacity 
+                style={[styles.typeBtn, type === 'Product' && styles.typeBtnActive]} 
+                onPress={() => setType('Product')}
+              >
+                <Text style={[styles.typeText, type === 'Product' && styles.typeTextActive]}>Product</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.typeBtn, type === 'Service' && styles.typeBtnActive]} 
+                onPress={() => setType('Service')}
+              >
+                <Text style={[styles.typeText, type === 'Service' && styles.typeTextActive]}>Service</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.row}>
               <View style={{ flex: 1, marginRight: 8 }}>
                 <CustomInput label="Size" placeholder="M" value={size} onChangeText={setSize} />
@@ -388,6 +408,35 @@ const styles = StyleSheet.create({
     color: COLORS.errorRed,
     fontSize: 14,
     fontWeight: '600',
+  },
+  typeSelector: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.softIvory,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+  },
+  typeBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  typeBtnActive: {
+    backgroundColor: COLORS.white,
+    shadowColor: COLORS.deepCharcoal,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  typeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.darkGrey,
+  },
+  typeTextActive: {
+    color: COLORS.champagneGold,
   },
 });
 // Favo file

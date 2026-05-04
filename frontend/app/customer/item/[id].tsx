@@ -34,7 +34,7 @@ export default function ItemDetailsScreen() {
     addToCart({
       _id: item._id,
       itemName: item.itemName,
-      price: item.rentalPrice,
+      price: item.price,
       image: item.image,
       quantity: 1,
       size: item.size,
@@ -93,7 +93,7 @@ export default function ItemDetailsScreen() {
           <View style={styles.priceRow}>
             <Banknote size={20} color={COLORS.mutedRose} />
             <Text style={styles.priceLabel}>Price</Text>
-            <Text style={styles.priceValue}>Rs. {(item.price || item.rentalPrice)?.toLocaleString()}</Text>
+            <Text style={styles.priceValue}>Rs. {item.price?.toLocaleString()}</Text>
           </View>
         </View>
 
