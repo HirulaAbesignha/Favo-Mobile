@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Search, ShoppingCart, User } from 'lucide-react-native';
+import { Home, Search, ShoppingCart, User, Menu } from 'lucide-react-native';
 import { COLORS } from '../../constants/colors';
 
 export default function CustomerTabs() {
@@ -47,6 +47,21 @@ export default function CustomerTabs() {
           tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="menu"
+        options={{
+          title: 'Menu',
+          tabBarIcon: ({ color, size }) => <Menu size={size} color={color} />,
+        }}
+      />
+
+      {/* Hidden Screens */}
+      <Tabs.Screen name="bookings" options={{ href: null }} />
+      <Tabs.Screen name="checkout" options={{ href: null }} />
+      <Tabs.Screen name="payments" options={{ href: null }} />
+      <Tabs.Screen name="visitors" options={{ href: null }} />
+      <Tabs.Screen name="complaints" options={{ href: null }} />
+      <Tabs.Screen name="item" options={{ href: null }} />
     </Tabs>
   );
 }

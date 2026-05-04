@@ -7,6 +7,7 @@ import {
   MessageSquare, 
   CalendarClock, 
   LayoutGrid,
+  ShoppingBag,
   X,
   ShieldCheck,
   HelpCircle,
@@ -21,6 +22,7 @@ export default function MenuScreen() {
       title: 'Services',
       items: [
         { icon: <LayoutGrid size={20} color={COLORS.champagneGold} />, label: 'Categories', onPress: () => router.push('/customer/items') },
+        { icon: <ShoppingBag size={20} color={COLORS.champagneGold} />, label: 'My Bookings', onPress: () => router.push('/customer/bookings') },
         { icon: <CreditCard size={20} color={COLORS.champagneGold} />, label: 'Payments', onPress: () => router.push('/customer/payments') },
         { icon: <CalendarClock size={20} color={COLORS.champagneGold} />, label: 'Visitors', onPress: () => router.push('/customer/visitors') },
         { icon: <MessageSquare size={20} color={COLORS.champagneGold} />, label: 'Complaints', onPress: () => router.push('/customer/complaints') },

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { LayoutDashboard, Package, CalendarDays, Settings } from 'lucide-react-native';
+import { LayoutDashboard, Package, CalendarDays, Menu } from 'lucide-react-native';
 import { COLORS } from '../../constants/colors';
 
 export default function AdminTabs() {
@@ -43,10 +43,16 @@ export default function AdminTabs() {
       <Tabs.Screen
         name="more"
         options={{
-          title: 'More',
-          tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
+          title: 'Menu',
+          tabBarIcon: ({ color, size }) => <Menu size={size} color={color} />,
         }}
       />
+
+      {/* Hidden Screens */}
+      <Tabs.Screen name="staff" options={{ href: null }} />
+      <Tabs.Screen name="payments" options={{ href: null }} />
+      <Tabs.Screen name="visitors" options={{ href: null }} />
+      <Tabs.Screen name="complaints" options={{ href: null }} />
     </Tabs>
   );
 }
