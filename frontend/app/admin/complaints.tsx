@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { complaintApi } from '../../api/complaintApi';
@@ -5,10 +6,17 @@ import { COLORS } from '../../constants/colors';
 import StatusBadge from '../../components/StatusBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
-import { MessageSquare, CheckCircle, XCircle } from 'lucide-react-native';
+import { MessageSquare, CheckCircle, XCircle, Send } from 'lucide-react-native';
+import { Modal } from 'react-native';
+import CustomInput from '../../components/CustomInput';
+import CustomButton from '../../components/CustomButton';
 
 export default function ManageComplaintsScreen() {
   const queryClient = useQueryClient();
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
+  const [newStatus, setNewStatus] = useState('');
+  const [adminResponse, setAdminResponse] = useState('');
 
   const { data: complaints, isLoading } = useQuery({
     queryKey: ['all-complaints'],
@@ -19,15 +27,36 @@ export default function ManageComplaintsScreen() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
-      complaintApi.updateStatus(id, status, 'Reviewed by admin'),
+    mutationFn: ({ id, status, response }: { id: string; status: string; response: string }) =>
+      complaintApi.updateStatus(id, status, response),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-complaints'] });
+      setShowResponseModal(false);
+      setAdminResponse('');
+      Alert.alert('Success', 'Complaint updated');
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.response?.data?.message || 'Failed to update complaint');
     },
   });
+
+  const handleAction = (complaint: any, status: string) => {
+    setSelectedComplaint(complaint);
+    setNewStatus(status);
+    setShowResponseModal(true);
+  };
+
+  const submitResponse = () => {
+    if (!adminResponse.trim()) {
+      Alert.alert('Error', 'Please provide a response');
+      return;
+    }
+    updateMutation.mutate({
+      id: selectedComplaint._id,
+      status: newStatus,
+      response: adminResponse,
+    });
+  };
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -59,24 +88,60 @@ export default function ManageComplaintsScreen() {
                 <View style={styles.actions}>
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: COLORS.successGreen + '12' }]}
-                    onPress={() => updateMutation.mutate({ id: c._id, status: 'Resolved' })}
+                    onPress={() => handleAction(c, 'Resolved')}
                   >
                     <CheckCircle size={16} color={COLORS.successGreen} />
                     <Text style={[styles.actionText, { color: COLORS.successGreen }]}>Resolve</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.actionBtn, { backgroundColor: COLORS.errorRed + '12' }]}
-                    onPress={() => updateMutation.mutate({ id: c._id, status: 'Rejected' })}
+                    onPress={() => handleAction(c, 'Rejected')}
                   >
                     <XCircle size={16} color={COLORS.errorRed} />
                     <Text style={[styles.actionText, { color: COLORS.errorRed }]}>Reject</Text>
                   </TouchableOpacity>
                 </View>
               )}
+              {c.adminResponse && (
+                <View style={styles.responseBox}>
+                  <Text style={styles.responseLabel}>Response: {c.adminResponse}</Text>
+                </View>
+              )}
             </View>
           ))
         )}
       </ScrollView>
+
+      <Modal visible={showResponseModal} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{newStatus} Complaint</Text>
+            <Text style={styles.modalSubtitle}>Subject: {selectedComplaint?.subject}</Text>
+            
+            <CustomInput
+              label="Admin Response"
+              placeholder="Explain the resolution or reason for rejection..."
+              value={adminResponse}
+              onChangeText={setAdminResponse}
+              multiline
+              numberOfLines={4}
+            />
+
+            <CustomButton
+              title={`Submit as ${newStatus}`}
+              onPress={submitResponse}
+              loading={updateMutation.isPending}
+            />
+            
+            <TouchableOpacity 
+              style={styles.closeBtn} 
+              onPress={() => setShowResponseModal(false)}
+            >
+              <Text style={styles.closeText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -161,6 +226,55 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 12,
     fontWeight: '700' as const,
+  },
+  responseBox: {
+    marginTop: 12,
+    backgroundColor: COLORS.softIvory,
+    padding: 10,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.champagneGold,
+  },
+  responseLabel: {
+    fontSize: 12,
+    color: COLORS.darkGrey,
+    fontStyle: 'italic',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: COLORS.deepCharcoal,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: COLORS.deepCharcoal,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: COLORS.mutedRose,
+    marginBottom: 20,
+  },
+  closeBtn: {
+    marginTop: 12,
+    alignItems: 'center',
+    padding: 10,
+  },
+  closeText: {
+    color: COLORS.darkGrey,
+    fontSize: 14,
   },
 });
 // Favo file

@@ -20,7 +20,5 @@ export const itemApi = {
   updateItem: (id: string, data: Partial<ItemData>) => api.put(`/items/${id}`, data),
   deleteItem: (id: string) => api.delete(`/items/${id}`),
   uploadImage: (id: string, formData: FormData) =>
-    api.post(`/items/${id}/upload`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post(`/items/${id}/upload`, formData),
 };

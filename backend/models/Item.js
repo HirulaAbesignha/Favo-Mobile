@@ -20,15 +20,10 @@ const itemSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    rentalPrice: {
+    price: {
       type: Number,
-      required: [true, 'Rental price is required'],
+      required: [true, 'Price is required'],
       min: [0, 'Price cannot be negative'],
-    },
-    depositAmount: {
-      type: Number,
-      required: [true, 'Deposit amount is required'],
-      min: [0, 'Deposit cannot be negative'],
     },
     description: {
       type: String,
@@ -45,7 +40,7 @@ const itemSchema = new mongoose.Schema(
     },
     availabilityStatus: {
       type: String,
-      enum: ['Available', 'Rented', 'Maintenance'],
+      enum: ['Available', 'Sold', 'Unavailable', 'Maintenance'],
       default: 'Available',
     },
     createdBy: {

@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const visitorSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null, // Allow null for walk-ins if needed, but usually tracked
+    },
     visitorName: {
       type: String,
       required: [true, 'Visitor name is required'],

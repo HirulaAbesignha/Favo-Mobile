@@ -25,7 +25,7 @@ export default function VisitorsScreen() {
   const { data: visitors, isLoading } = useQuery({
     queryKey: ['my-visitors'],
     queryFn: async () => {
-      const res = await visitorApi.getAllVisitors();
+      const res = await visitorApi.getMyVisitors();
       return res.data;
     },
   });

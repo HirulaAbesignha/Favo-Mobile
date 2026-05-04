@@ -7,12 +7,14 @@ const Visitor = require('../models/Visitor');
 const createVisitor = async (req, res) => {
   try {
     const { visitorName, phone, email, purpose, visitDate, visitTime, relatedBookingId, notes } = req.body;
+    const userId = req.user ? req.user._id : null;
 
     if (!visitorName || !phone || !purpose || !visitDate || !visitTime) {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
     const visitor = await Visitor.create({
+      userId,
       visitorName,
       phone,
       email: email || '',
@@ -36,6 +38,21 @@ const createVisitor = async (req, res) => {
 const getAllVisitors = async (req, res) => {
   try {
     const visitors = await Visitor.find()
+      .populate('relatedBookingId', 'status')
+      .sort({ createdAt: -1 });
+    res.json(visitors);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Get current user's visits
+ * GET /api/visitors/my-visits
+ */
+const getMyVisitors = async (req, res) => {
+  try {
+    const visitors = await Visitor.find({ userId: req.user._id })
       .populate('relatedBookingId', 'status')
       .sort({ createdAt: -1 });
     res.json(visitors);
@@ -93,4 +110,11 @@ const deleteVisitor = async (req, res) => {
   }
 };
 
-module.exports = { createVisitor, getAllVisitors, getVisitorById, updateVisitorStatus, deleteVisitor };
+module.exports = { 
+  createVisitor, 
+  getAllVisitors, 
+  getMyVisitors,
+  getVisitorById, 
+  updateVisitorStatus, 
+  deleteVisitor 
+};

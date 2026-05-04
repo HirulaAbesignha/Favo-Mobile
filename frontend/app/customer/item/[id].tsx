@@ -8,13 +8,14 @@ import { COLORS } from '../../../constants/colors';
 import CustomButton from '../../../components/CustomButton';
 import StatusBadge from '../../../components/StatusBadge';
 import LoadingSpinner from '../../../components/LoadingSpinner';
-import { Calendar, Ruler, Palette, ShieldCheck, DollarSign } from 'lucide-react-native';
+import { useCart } from '../../../context/CartContext';
+import { Calendar, Ruler, Palette, ShieldCheck, Banknote } from 'lucide-react-native';
 
 export default function ItemDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [bookingLoading, setBookingLoading] = useState(false);
+  const { addToCart } = useCart();
 
   const { data: item, isLoading } = useQuery({
     queryKey: ['item', id],
@@ -24,34 +25,26 @@ export default function ItemDetailsScreen() {
     },
   });
 
-  const createBookingMutation = useMutation({
-    mutationFn: () =>
-      bookingApi.createBooking({
-        itemId: id as string,
-        rentalStartDate: new Date().toISOString(),
-        rentalEndDate: new Date(Date.now() + 3 * 86400000).toISOString(),
-        totalAmount: item?.rentalPrice * 3 + item?.depositAmount || 0,
-        notes: 'Booked from mobile app',
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bookings'] });
-      Alert.alert('Success', 'Booking request submitted!', [
-        { text: 'OK', onPress: () => router.push('/customer/bookings') },
-      ]);
-    },
-    onError: (err: any) => {
-      Alert.alert('Error', err?.response?.data?.message || 'Failed to create booking');
-    },
-  });
-
-  const handleBook = () => {
+  const handleAddToCart = () => {
     if (item?.availabilityStatus !== 'Available') {
-      Alert.alert('Unavailable', 'This item is currently not available for booking.');
+      Alert.alert('Unavailable', 'This item is currently not available.');
       return;
     }
-    setBookingLoading(true);
-    createBookingMutation.mutate();
-    setBookingLoading(false);
+    
+    addToCart({
+      _id: item._id,
+      itemName: item.itemName,
+      price: item.rentalPrice,
+      image: item.image,
+      quantity: 1,
+      size: item.size,
+      color: item.color,
+    });
+    
+    Alert.alert('Success', 'Added to cart!', [
+      { text: 'View Cart', onPress: () => router.push('/customer/cart') },
+      { text: 'Continue Shopping' }
+    ]);
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -98,23 +91,16 @@ export default function ItemDetailsScreen() {
 
         <View style={styles.priceCard}>
           <View style={styles.priceRow}>
-            <DollarSign size={18} color={COLORS.mutedRose} />
-            <Text style={styles.priceLabel}>Rental Price</Text>
-            <Text style={styles.priceValue}>${item.rentalPrice} / day</Text>
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.priceRow}>
-            <DollarSign size={18} color={COLORS.mutedRose} />
-            <Text style={styles.priceLabel}>Deposit</Text>
-            <Text style={styles.priceValue}>${item.depositAmount}</Text>
+            <Banknote size={20} color={COLORS.mutedRose} />
+            <Text style={styles.priceLabel}>Price</Text>
+            <Text style={styles.priceValue}>Rs. {(item.price || item.rentalPrice)?.toLocaleString()}</Text>
           </View>
         </View>
 
         <CustomButton
-          title={item.availabilityStatus === 'Available' ? 'Book Now' : 'Not Available'}
-          onPress={handleBook}
+          title={item.availabilityStatus === 'Available' ? 'Add to Cart' : 'Sold Out'}
+          onPress={handleAddToCart}
           disabled={item.availabilityStatus !== 'Available'}
-          loading={bookingLoading}
         />
       </View>
     </ScrollView>

@@ -11,6 +11,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import * as ImagePicker from 'expo-image-picker';
 import { Plus, Trash2, Image as ImageIcon } from 'lucide-react-native';
+import { Platform } from 'react-native';
 
 export default function ManageItemsScreen() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function ManageItemsScreen() {
   const [stock, setStock] = useState('');
   const [desc, setDesc] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -54,8 +56,7 @@ export default function ManageItemsScreen() {
         category,
         size,
         color,
-        rentalPrice: Number(price),
-        depositAmount: Number(deposit),
+        price: Number(price),
         description: desc,
         stockQuantity: Number(stock),
       });
@@ -64,11 +65,23 @@ export default function ManageItemsScreen() {
 
       if (imageUri && newItem._id) {
         const formData = new FormData();
-        formData.append('image', {
-          uri: imageUri,
-          name: 'item-image.jpg',
-          type: 'image/jpeg',
-        } as any);
+        console.log('Platform:', Platform.OS);
+        console.log('Image URI:', imageUri);
+
+        if (Platform.OS === 'web') {
+          console.log('Fetching blob for web...');
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          console.log('Blob created:', blob.size, blob.type);
+          formData.append('image', blob, 'item-image.jpg');
+        } else {
+          formData.append('image', {
+            uri: imageUri,
+            name: 'item-image.jpg',
+            type: 'image/jpeg',
+          } as any);
+        }
+        
         await itemApi.uploadImage(newItem._id, formData);
       }
       return newItem;
@@ -76,7 +89,7 @@ export default function ManageItemsScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['items'] });
       setShowForm(false);
-      setName(''); setCategory(''); setSize(''); setColor(''); setPrice(''); setDeposit(''); setStock(''); setDesc(''); setImageUri(null);
+      resetForm();
       Alert.alert('Success', 'Item created successfully');
     },
     onError: (err: any) => {
@@ -84,22 +97,99 @@ export default function ManageItemsScreen() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await itemApi.updateItem(editingItem._id, {
+        itemName: name,
+        category,
+        size,
+        color,
+        price: Number(price),
+        description: desc,
+        stockQuantity: Number(stock),
+      });
+
+      if (imageUri && !imageUri.startsWith('http')) {
+        const formData = new FormData();
+        console.log('Update - Platform:', Platform.OS);
+        console.log('Update - Image URI:', imageUri);
+
+        if (Platform.OS === 'web') {
+          console.log('Update - Fetching blob for web...');
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          console.log('Update - Blob created:', blob.size, blob.type);
+          formData.append('image', blob, 'item-image.jpg');
+        } else {
+          formData.append('image', {
+            uri: imageUri,
+            name: 'item-image.jpg',
+            type: 'image/jpeg',
+          } as any);
+        }
+
+        await itemApi.uploadImage(editingItem._id, formData);
+      }
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      setShowForm(false);
+      resetForm();
+      Alert.alert('Success', 'Item updated successfully');
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err?.response?.data?.message || 'Failed to update item');
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => itemApi.deleteItem(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['items'] });
+      Alert.alert('Success', 'Item deleted');
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.response?.data?.message || 'Failed to delete item');
     },
   });
 
+  const resetForm = () => {
+    setName('');
+    setCategory('');
+    setSize('');
+    setColor('');
+    setPrice('');
+    setDeposit('');
+    setStock('');
+    setDesc('');
+    setImageUri(null);
+    setEditingItem(null);
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingItem(item);
+    setName(item.itemName);
+    setCategory(item.category);
+    setSize(item.size);
+    setColor(item.color);
+    setPrice(item.price.toString());
+    setStock(item.stockQuantity.toString());
+    setDesc(item.description || '');
+    setImageUri(item.image || null);
+    setShowForm(true);
+  };
+
   const handleCreate = () => {
-    if (!name || !category || !size || !color || !price || !deposit || !stock) {
+    if (!name || !category || !size || !color || !price || !stock) {
       Alert.alert('Error', 'Please fill all required fields');
       return;
     }
-    createMutation.mutate();
+    if (editingItem) {
+      updateMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
   };
 
   if (isLoading) return <LoadingSpinner />;
@@ -108,22 +198,39 @@ export default function ManageItemsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Manage Items</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setShowForm(!showForm)}>
-          <Plus size={20} color={COLORS.white} />
+        <TouchableOpacity 
+          style={styles.addBtn} 
+          onPress={() => {
+            if (showForm) resetForm();
+            setShowForm(!showForm);
+          }}
+        >
+          <Plus size={20} color={COLORS.white} style={{ transform: [{ rotate: showForm ? '45deg' : '0deg' }] }} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {showForm && (
           <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Add New Item</Text>
+            <Text style={styles.formTitle}>{editingItem ? 'Edit Item' : 'Add New Item'}</Text>
             <CustomInput label="Item Name" placeholder="Elegant Evening Gown" value={name} onChangeText={setName} />
             <CustomInput label="Category" placeholder="Dresses" value={category} onChangeText={setCategory} />
-            <CustomInput label="Size" placeholder="M" value={size} onChangeText={setSize} />
-            <CustomInput label="Color" placeholder="Black" value={color} onChangeText={setColor} />
-            <CustomInput label="Rental Price" placeholder="50" value={price} onChangeText={setPrice} keyboardType="numeric" />
-            <CustomInput label="Deposit" placeholder="100" value={deposit} onChangeText={setDeposit} keyboardType="numeric" />
-            <CustomInput label="Stock" placeholder="5" value={stock} onChangeText={setStock} keyboardType="numeric" />
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <CustomInput label="Size" placeholder="M" value={size} onChangeText={setSize} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <CustomInput label="Color" placeholder="Black" value={color} onChangeText={setColor} />
+              </View>
+            </View>
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <CustomInput label="Price (Rs.)" placeholder="5000" value={price} onChangeText={setPrice} keyboardType="numeric" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <CustomInput label="Stock" placeholder="5" value={stock} onChangeText={setStock} keyboardType="numeric" />
+              </View>
+            </View>
             <CustomInput label="Description" placeholder="Description..." value={desc} onChangeText={setDesc} multiline numberOfLines={3} />
             
             <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
@@ -137,7 +244,16 @@ export default function ManageItemsScreen() {
               )}
             </TouchableOpacity>
 
-            <CustomButton title="Create Item" onPress={handleCreate} loading={createMutation.isPending} />
+            <CustomButton 
+              title={editingItem ? 'Update Item' : 'Create Item'} 
+              onPress={handleCreate} 
+              loading={createMutation.isPending || updateMutation.isPending} 
+            />
+            {editingItem && (
+              <TouchableOpacity style={styles.cancelBtn} onPress={resetForm}>
+                <Text style={styles.cancelText}>Cancel Edit</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -147,10 +263,15 @@ export default function ManageItemsScreen() {
           ) : (
             items?.map((item: any) => (
               <View key={item._id} style={styles.itemWrapper}>
-                <ItemCard item={item} onPress={() => {}} />
+                <ItemCard item={item} onPress={() => handleEdit(item)} />
                 <TouchableOpacity
                   style={styles.deleteBtn}
-                  onPress={() => deleteMutation.mutate(item._id)}
+                  onPress={() => {
+                    Alert.alert('Delete', 'Are you sure?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(item._id) },
+                    ]);
+                  }}
                 >
                   <Trash2 size={16} color={COLORS.errorRed} />
                 </TouchableOpacity>
@@ -253,6 +374,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cancelBtn: {
+    marginTop: 12,
+    alignItems: 'center',
+    padding: 8,
+  },
+  cancelText: {
+    color: COLORS.errorRed,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 // Favo file

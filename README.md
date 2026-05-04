@@ -81,7 +81,7 @@ backend/
 - utils/
   - generateToken.js, generateTransactionId.js
 
-expo/
+frontend/
 - app/
   - index.tsx (Splash)
   - auth/ (Login, Register)
@@ -122,7 +122,7 @@ npm start
 
 ### Frontend
 ```bash
-cd expo
+cd frontend
 bun install
 # Update api/axiosConfig.ts with your backend URL
 bun run start
@@ -200,7 +200,7 @@ bun run start
 4. Deploy and copy the live URL
 
 ### Frontend Configuration
-1. Update `expo/api/axiosConfig.ts` with your deployed backend URL
+1. Update `frontend/api/axiosConfig.ts` with your deployed backend URL
 2. Build with `eas build` or run locally with `bun run start`
 
 ## Team Members & Responsibilities

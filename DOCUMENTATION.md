@@ -222,7 +222,7 @@ erDiagram
 5. Deploy and copy the live URL (e.g., `https://favo-api.onrender.com`).
 
 ### Frontend Configuration
-1. Open `expo/api/axiosConfig.ts`.
+1. Open `frontend/api/axiosConfig.ts`.
 2. Replace the placeholder URL with your deployed backend URL:
    ```ts
    const API_BASE_URL = 'https://favo-api.onrender.com';

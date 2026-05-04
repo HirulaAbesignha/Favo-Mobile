@@ -18,6 +18,7 @@ export default function ManageStaffScreen() {
   const [phone, setPhone] = useState('');
   const [position, setPosition] = useState('');
   const [department, setDepartment] = useState('');
+  const [editingStaff, setEditingStaff] = useState<any>(null);
 
   const { data: staff, isLoading } = useQuery({
     queryKey: ['staff'],
@@ -39,13 +40,64 @@ export default function ManageStaffScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
       setShowForm(false);
-      setName(''); setEmail(''); setPhone(''); setPosition(''); setDepartment('');
+      resetForm();
       Alert.alert('Success', 'Staff member added');
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.response?.data?.message || 'Failed to add staff');
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      staffApi.updateStaff(editingStaff._id, {
+        staffName: name,
+        email,
+        phone,
+        position,
+        assignedDepartment: department,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff'] });
+      setShowForm(false);
+      resetForm();
+      Alert.alert('Success', 'Staff member updated');
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err?.response?.data?.message || 'Failed to update staff');
+    },
+  });
+
+  const resetForm = () => {
+    setName('');
+    setEmail('');
+    setPhone('');
+    setPosition('');
+    setDepartment('');
+    setEditingStaff(null);
+  };
+
+  const handleEdit = (s: any) => {
+    setEditingStaff(s);
+    setName(s.staffName);
+    setEmail(s.email);
+    setPhone(s.phone);
+    setPosition(s.position);
+    setDepartment(s.assignedDepartment);
+    setShowForm(true);
+  };
+
+  const handleSubmit = () => {
+    if (!name || !email || !phone || !position || !department) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+    if (editingStaff) {
+      updateMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => staffApi.deleteStaff(id),
@@ -61,21 +113,36 @@ export default function ManageStaffScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Manage Staff</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setShowForm(!showForm)}>
-          <Plus size={20} color={COLORS.white} />
+        <TouchableOpacity 
+          style={styles.addBtn} 
+          onPress={() => {
+            if (showForm) resetForm();
+            setShowForm(!showForm);
+          }}
+        >
+          <Plus size={20} color={COLORS.white} style={{ transform: [{ rotate: showForm ? '45deg' : '0deg' }] }} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {showForm && (
           <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Add Staff Member</Text>
+            <Text style={styles.formTitle}>{editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}</Text>
             <CustomInput label="Name" placeholder="John Smith" value={name} onChangeText={setName} />
             <CustomInput label="Email" placeholder="john@favo.com" value={email} onChangeText={setEmail} keyboardType="email-address" />
             <CustomInput label="Phone" placeholder="+1 234 567 890" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
             <CustomInput label="Position" placeholder="Sales Manager" value={position} onChangeText={setPosition} />
             <CustomInput label="Department" placeholder="Operations" value={department} onChangeText={setDepartment} />
-            <CustomButton title="Add Staff" onPress={() => createMutation.mutate()} loading={createMutation.isPending} />
+            <CustomButton 
+              title={editingStaff ? 'Update Staff' : 'Add Staff'} 
+              onPress={handleSubmit} 
+              loading={createMutation.isPending || updateMutation.isPending} 
+            />
+            {editingStaff && (
+              <TouchableOpacity style={styles.cancelBtn} onPress={resetForm}>
+                <Text style={styles.cancelText}>Cancel Edit</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -84,7 +151,7 @@ export default function ManageStaffScreen() {
             <EmptyState message="No staff members found" />
           ) : (
             staff?.map((s: any) => (
-              <View key={s._id} style={styles.card}>
+              <TouchableOpacity key={s._id} style={styles.card} onPress={() => handleEdit(s)}>
                 <View style={styles.cardHeader}>
                   <View style={styles.iconBox}>
                     <Users size={20} color={COLORS.champagneGold} />
@@ -98,11 +165,16 @@ export default function ManageStaffScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.deleteBtn}
-                  onPress={() => deleteMutation.mutate(s._id)}
+                  onPress={() => {
+                    Alert.alert('Delete', 'Are you sure?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(s._id) },
+                    ]);
+                  }}
                 >
                   <Trash2 size={16} color={COLORS.errorRed} />
                 </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
@@ -208,6 +280,16 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.errorRed + '10',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  cancelBtn: {
+    marginTop: 12,
+    alignItems: 'center',
+    padding: 8,
+  },
+  cancelText: {
+    color: COLORS.errorRed,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 // Favo file

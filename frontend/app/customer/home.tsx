@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { COLORS } from '../../constants/colors';
 import ItemCard from '../../components/ItemCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { TrendingUp, Sparkles, Clock } from 'lucide-react-native';
+import { TrendingUp, Sparkles, Clock, Menu } from 'lucide-react-native';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -37,8 +37,15 @@ export default function HomeScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {user?.name || 'Fashionista'}</Text>
-        <Text style={styles.subGreeting}>Discover your next statement look</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={styles.greeting}>Hello, {user?.name || 'Fashionista'}</Text>
+            <Text style={styles.subGreeting}>Discover your next statement look</Text>
+          </View>
+          <TouchableOpacity onPress={() => router.push('/customer/menu')} style={styles.menuBtn}>
+            <Menu size={24} color={COLORS.deepCharcoal} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Categories */}
@@ -111,6 +118,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.darkGrey,
     marginTop: 4,
+  },
+  menuBtn: {
+    backgroundColor: COLORS.white,
+    padding: 10,
+    borderRadius: 12,
+    shadowColor: COLORS.deepCharcoal,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   catRow: {
     paddingHorizontal: 16,

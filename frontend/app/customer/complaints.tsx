@@ -8,14 +8,30 @@ import CustomButton from '../../components/CustomButton';
 import StatusBadge from '../../components/StatusBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
-import { MessageSquare } from 'lucide-react-native';
+import { MessageSquare, Image as ImageIcon } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Image, TouchableOpacity } from 'react-native';
 
 export default function ComplaintsScreen() {
   const queryClient = useQueryClient();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
 
   const { data: complaints, isLoading } = useQuery({
     queryKey: ['my-complaints'],
@@ -26,11 +42,16 @@ export default function ComplaintsScreen() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () => complaintApi.createComplaint({ subject, description }),
+    mutationFn: () => complaintApi.createComplaint({ 
+      subject, 
+      description,
+      image: imageUri || '' // Passing URI as string for now, or handle as FormData if backend supports it
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-complaints'] });
       setSubject('');
       setDescription('');
+      setImageUri(null);
       Alert.alert('Success', 'Complaint submitted successfully');
     },
     onError: (err: any) => {
@@ -79,6 +100,16 @@ export default function ComplaintsScreen() {
             numberOfLines={4}
             error={errors.description}
           />
+          <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+            {imageUri ? (
+              <Image source={{ uri: imageUri }} style={styles.previewImage} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <ImageIcon size={24} color={COLORS.darkGrey} />
+                <Text style={styles.imageText}>Add photo evidence (optional)</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           <CustomButton title="Submit Complaint" onPress={handleSubmit} loading={submitting} />
         </View>
 
@@ -214,6 +245,30 @@ const styles = StyleSheet.create({
   responseText: {
     fontSize: 13,
     color: COLORS.darkGrey,
+  },
+  imagePicker: {
+    height: 100,
+    borderWidth: 1,
+    borderColor: COLORS.lightGrey,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.softIvory,
+  },
+  imageText: {
+    fontSize: 12,
+    color: COLORS.darkGrey,
+    marginTop: 8,
   },
 });
 // Favo file

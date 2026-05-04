@@ -7,13 +7,15 @@ const API_BASE_URL =
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
   timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 api.interceptors.request.use(
   async (config) => {
+    // Set Content-Type only if not already set (e.g. for FormData)
+    if (!(config.data instanceof FormData) && !config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+    
     const token = await AsyncStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const Item = require('../models/Item');
 
 /**
@@ -82,6 +84,15 @@ const deleteItem = async (req, res) => {
     const item = await Item.findById(req.params.id);
     if (!item) return res.status(404).json({ message: 'Item not found' });
 
+    // Delete image file if exists
+    if (item.image) {
+      const filename = item.image.split('/').pop();
+      const filePath = path.join(__dirname, '../uploads', filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
     await item.deleteOne();
     res.json({ message: 'Item deleted successfully' });
   } catch (error) {
@@ -95,11 +106,22 @@ const deleteItem = async (req, res) => {
  */
 const uploadItemImage = async (req, res) => {
   try {
+    console.log('Upload Request - File:', req.file);
+    console.log('Upload Request - Body:', req.body);
     const item = await Item.findById(req.params.id);
     if (!item) return res.status(404).json({ message: 'Item not found' });
 
     if (!req.file) {
       return res.status(400).json({ message: 'Please upload an image' });
+    }
+
+    // Delete old image if exists
+    if (item.image) {
+      const filename = item.image.split('/').pop();
+      const filePath = path.join(__dirname, '../uploads', filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
     const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;

@@ -13,6 +13,7 @@ export interface VisitorData {
 
 export const visitorApi = {
   createVisitor: (data: VisitorData) => api.post('/visitors', data),
+  getMyVisitors: () => api.get('/visitors/my-visits'),
   getAllVisitors: () => api.get('/visitors'),
   getVisitorById: (id: string) => api.get(`/visitors/${id}`),
   updateStatus: (id: string, status: string) => api.put(`/visitors/${id}/status`, { status }),

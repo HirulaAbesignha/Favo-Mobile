@@ -104,12 +104,16 @@ const updateBookingStatus = async (req, res) => {
     booking.status = status;
     await booking.save();
 
-    // If approved, mark item as Booked
+    // If approved, check if we need to mark as Booked (out of stock)
     if (status === 'Approved') {
       const item = await Item.findById(booking.itemId);
       if (item) {
-        item.availabilityStatus = 'Booked';
-        await item.save();
+        // If stock is already 0, it should have been handled at creation,
+        // but let's ensure consistency.
+        if (item.stockQuantity === 0) {
+          item.availabilityStatus = 'Booked';
+          await item.save();
+        }
       }
     }
 
@@ -118,9 +122,7 @@ const updateBookingStatus = async (req, res) => {
       const item = await Item.findById(booking.itemId);
       if (item) {
         item.stockQuantity += 1;
-        if (item.stockQuantity > 0) {
-          item.availabilityStatus = 'Available';
-        }
+        item.availabilityStatus = 'Available';
         await item.save();
       }
     }
@@ -151,9 +153,7 @@ const cancelBooking = async (req, res) => {
     const item = await Item.findById(booking.itemId);
     if (item) {
       item.stockQuantity += 1;
-      if (item.stockQuantity > 0) {
-        item.availabilityStatus = 'Available';
-      }
+      item.availabilityStatus = 'Available';
       await item.save();
     }
 
