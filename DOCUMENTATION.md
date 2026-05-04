@@ -1,243 +1,212 @@
-# Favo - Assignment Documentation
-
-## 1. Problem Statement
-
-Fashion is a fast-moving industry where individuals frequently need premium outfits for special occasions such as weddings, galas, corporate events, and photoshoots. However, purchasing high-end fashion items for one-time use is expensive and unsustainable. On the other hand, fashion rental businesses lack a modern digital platform to manage inventory, bookings, payments, and customer support efficiently.
-
-**Favo** addresses this gap by providing a complete digital ecosystem that:
-- Enables customers to browse, filter, and rent fashion items through a premium mobile interface.
-- Allows admins to manage inventory, approve bookings, track payments, handle complaints, and schedule visitor appointments.
-- Replaces manual paperwork and disconnected systems with a unified, cloud-connected platform.
-- Supports image uploads for items and complaints, ensuring transparency and quality assurance.
-
-By combining a React Native mobile app with a Node.js/Express REST API and MongoDB Atlas, Favo delivers a scalable, deployable solution for fashion rental businesses.
+# Favo - Fashion Rental & Outfit Management System
+## Detailed Implementation Documentation
 
 ---
 
-## 2. System Architecture Diagram
+## 1. Executive Summary
+**Favo** is a premium, full-stack digital ecosystem designed for the fashion rental industry. It bridges the gap between high-end fashion accessibility and sustainable consumption by providing a platform for renting luxury outfits. The system features a sophisticated mobile interface for customers and a comprehensive administrative dashboard for business management.
+
+---
+
+## 2. Technology Stack
+
+### Frontend (Mobile Application)
+- **Framework**: React Native with **Expo SDK 54**.
+- **Navigation**: **Expo Router** (File-based routing) for seamless transitions.
+- **Language**: **TypeScript** for type-safe development.
+- **State Management**: **TanStack React Query** for efficient server-side state synchronization and **Zustand** for lightweight client-side state.
+- **Styling**: Custom theme system implementing a "Luxury Wonder" aesthetic with **Inter** and **Outfit** typography.
+- **API Communication**: **Axios** with centralized configuration and interceptors.
+- **Persistence**: **AsyncStorage** for local session management.
+
+### Backend (RESTful API)
+- **Runtime**: **Node.js** with **Express.js** framework.
+- **Database**: **MongoDB Atlas** (Cloud Database) with **Mongoose ODM**.
+- **Authentication**: **JSON Web Token (JWT)** with role-based access control (RBAC).
+- **Security**: **Bcrypt.js** for password hashing and custom middleware for route protection.
+- **File Handling**: **Multer** for processing multi-part form data (images).
+- **Environment**: Managed via `.env` files for production/development parity.
+
+---
+
+## 3. System Architecture
+
+### 3.1. Architectural Overview
+The system follows a Client-Server architecture where the React Native mobile app communicates with a Node.js backend via a secure REST API.
 
 ```mermaid
-graph LR
-    A[React Native App<br/>Expo + TypeScript] -->|Axios API Calls| B[Express.js Server<br/>Node.js]
-    B --> C[JWT Auth Middleware]
-    B --> D[Role Middleware]
-    B --> E[Multer Upload]
-    B --> F[RESTful Routes]
-    F --> G[Controllers]
-    G --> H[MongoDB Atlas<br/>Mongoose ODM]
-    H --> I[User Collection]
-    H --> J[Item Collection]
-    H --> K[Booking Collection]
-    H --> L[Staff Collection]
-    H --> M[Payment Collection]
-    H --> N[Complaint Collection]
-    H --> O[Visitor Collection]
+graph TD
+    subgraph "Frontend (Mobile App)"
+        A[React Native / Expo]
+        A1[React Query - Data Fetching]
+        A2[Zustand - Cart/Auth State]
+        A3[Expo Router - Navigation]
+    end
+
+    subgraph "Backend (REST API)"
+        B[Express.js Server]
+        B1[Auth Middleware]
+        B2[Role Middleware]
+        B3[Upload Middleware]
+        B4[Controllers & Routes]
+    end
+
+    subgraph "Storage & Database"
+        C[(MongoDB Atlas)]
+        D[Local File System / Uploads]
+    end
+
+    A -->|HTTPS Requests| B
+    B -->|Mongoose Queries| C
+    B -->|File Storage| D
 ```
 
 ---
 
-## 3. Database Schema Diagram (ERD)
+## 4. Database Schema (ERD)
+
+The database consists of 7 core collections with complex relationships established through MongoDB ObjectIds.
 
 ```mermaid
 erDiagram
-    USER ||--o{ ITEM : creates
     USER ||--o{ BOOKING : places
-    USER ||--o{ PAYMENT : makes
     USER ||--o{ COMPLAINT : submits
-    ITEM ||--o{ BOOKING : booked_in
-    BOOKING ||--o| PAYMENT : has
-    BOOKING ||--o| COMPLAINT : related_to
-    BOOKING ||--o| VISITOR : related_to
+    USER ||--o{ PAYMENT : makes
+    ITEM ||--o{ BOOKING : reserved_in
+    BOOKING ||--o| PAYMENT : results_in
+    BOOKING ||--o| COMPLAINT : relates_to
+    BOOKING ||--o| VISITOR : schedules
+    STAFF ||--o{ ITEM : manages
 
     USER {
-        ObjectId _id PK
         string name
         string email
         string password
-        string phone
-        string role
-        Date createdAt
-        Date updatedAt
+        string role "admin | customer"
     }
-
     ITEM {
-        ObjectId _id PK
         string itemName
         string category
-        string size
-        string color
         number rentalPrice
-        number depositAmount
-        string description
-        string image
         string availabilityStatus
-        number stockQuantity
-        ObjectId createdBy FK
-        Date createdAt
-        Date updatedAt
+        string image
     }
-
     BOOKING {
-        ObjectId _id PK
-        ObjectId userId FK
-        ObjectId itemId FK
-        Date bookingDate
-        Date rentalStartDate
-        Date rentalEndDate
+        date startDate
+        date endDate
+        string status "pending | confirmed | completed | cancelled"
         number totalAmount
-        string status
-        string notes
-        Date createdAt
-        Date updatedAt
     }
-
     STAFF {
-        ObjectId _id PK
         string staffName
-        string email
-        string phone
         string position
-        string assignedDepartment
         string availabilityStatus
-        string profileImage
-        Date createdAt
-        Date updatedAt
     }
-
     PAYMENT {
-        ObjectId _id PK
-        ObjectId userId FK
-        ObjectId bookingId FK
         number amount
-        string paymentMethod
-        string paymentStatus
+        string status "paid | pending | failed"
         string transactionId
-        Date paymentDate
-        Date createdAt
-        Date updatedAt
-    }
-
-    COMPLAINT {
-        ObjectId _id PK
-        ObjectId userId FK
-        ObjectId bookingId FK
-        string subject
-        string description
-        string image
-        string status
-        string adminResponse
-        Date createdAt
-        Date updatedAt
-    }
-
-    VISITOR {
-        ObjectId _id PK
-        string visitorName
-        string phone
-        string email
-        string purpose
-        Date visitDate
-        string visitTime
-        string status
-        ObjectId relatedBookingId FK
-        string notes
-        Date createdAt
-        Date updatedAt
     }
 ```
 
 ---
 
-## 4. API Endpoint Table
+## 5. Module Implementation Details
 
-| Method | Endpoint | Description | Access | Module |
-|--------|----------|-------------|--------|--------|
-| POST | /api/auth/register | Register new user | Public | Auth |
-| POST | /api/auth/login | Login user | Public | Auth |
-| GET | /api/auth/profile | Get profile | Protected | Auth |
-| POST | /api/items | Create item | Admin | Item |
-| GET | /api/items | Get all items | Public | Item |
-| GET | /api/items/:id | Get single item | Public | Item |
-| PUT | /api/items/:id | Update item | Admin | Item |
-| DELETE | /api/items/:id | Delete item | Admin | Item |
-| POST | /api/items/:id/upload | Upload image | Admin | Item |
-| POST | /api/bookings | Create booking | Customer | Booking |
-| GET | /api/bookings/my-bookings | My bookings | Customer | Booking |
-| GET | /api/bookings | All bookings | Admin | Booking |
-| PUT | /api/bookings/:id/status | Update status | Admin | Booking |
-| PUT | /api/bookings/:id/cancel | Cancel booking | Customer | Booking |
-| DELETE | /api/bookings/:id | Delete booking | Admin | Booking |
-| POST | /api/staff | Create staff | Admin | Staff |
-| GET | /api/staff | Get all staff | Admin | Staff |
-| PUT | /api/staff/:id | Update staff | Admin | Staff |
-| DELETE | /api/staff/:id | Delete staff | Admin | Staff |
-| POST | /api/payments | Create payment | Customer | Payment |
-| GET | /api/payments/my-payments | My payments | Customer | Payment |
-| GET | /api/payments | All payments | Admin | Payment |
-| PUT | /api/payments/:id/status | Update status | Admin | Payment |
-| DELETE | /api/payments/:id | Delete payment | Admin | Payment |
-| POST | /api/complaints | Create complaint | Customer | Complaint |
-| GET | /api/complaints/my-complaints | My complaints | Customer | Complaint |
-| GET | /api/complaints | All complaints | Admin | Complaint |
-| PUT | /api/complaints/:id/status | Update status | Admin | Complaint |
-| DELETE | /api/complaints/:id | Delete complaint | Admin | Complaint |
-| POST | /api/visitors | Create visitor | Customer | Visitor |
-| GET | /api/visitors | All visitors | Admin | Visitor |
-| PUT | /api/visitors/:id/status | Update status | Admin | Visitor |
-| DELETE | /api/visitors/:id | Delete visitor | Admin | Visitor |
+### 5.1. Authentication Module
+- **Features**: Registration, Login, Profile Management.
+- **Logic**: Uses JWT stored in AsyncStorage. Middleware checks token validity and role (Admin/Customer) before allowing access to specific routes.
+
+### 5.2. Item Management (Inventory)
+- **Admin**: Full CRUD operations. Supports image uploads via Multer.
+- **Customer**: Browsing, searching, and filtering by category/size.
+- **Status Tracking**: Tracks "Available", "Rented", and "Maintenance" states.
+
+### 5.3. Booking & Rental Module
+- **Logic**: Handles date-range selection, calculates total rental costs including deposits, and prevents double-booking of items.
+- **Workflow**: Customer requests -> Admin approves -> Payment processed -> Rental starts.
+
+### 5.4. Payment & Financials
+- **Features**: Transaction history, automated transaction ID generation.
+- **Utility**: Helps admins assign tasks or track who is managing specific inventory.
+
+### 5.5. Staff & Support
+- **Features**: Manage internal staff profiles and availability.
+- **Utility**: Helps admins assign tasks or track who is managing specific inventory.
+
+### 5.6. Complaint System
+- **Features**: Customers can submit complaints with images. Admins can respond and update status (Open -> Resolved).
+
+### 5.7. Visitor & Appointment Module
+- **Features**: Schedule pickups or returns. Supports status updates (Scheduled -> Completed).
 
 ---
 
-## 5. Team Responsibility Breakdown
+## 6. API Documentation Summary
 
-| Member | Entity | Focus Area | Backend Responsibilities | Frontend Responsibilities | Viva Focus |
-|--------|--------|-----------|------------------------|--------------------------|------------|
-| Shared | User | Authentication | Register API, Login API, JWT generation, Password hashing with bcrypt, Auth middleware, Protected routes | LoginScreen, RegisterScreen, AuthContext, AsyncStorage token handling | JWT flow, bcrypt, middleware chain |
-| Member 1 | Item | Product / Inventory Management | Item model, CRUD APIs, Multer image upload, Category/size filters, Stock logic | ItemCard, ItemListScreen, ItemDetailsScreen, Admin items with create/delete | Multer upload, stock availability logic |
-| Member 2 | Booking | Outfit Rental Booking | Booking model, Create booking, Approve/reject APIs, Cancel booking, Stock deduction/restoration | MyBookingsScreen, ManageBookingsScreen, CreateBookingScreen | Booking status flow, stock sync |
-| Member 3 | Staff | Staff / Support Management | Staff model, CRUD APIs, Availability tracking | ManageStaffScreen, Staff cards | Admin-only access, staff schema |
-| Member 4 | Payment | Financial Management | Payment model, Create payment, Transaction ID generation, Status updates | MyPaymentsScreen, ManagePaymentsScreen, Payment cards | Transaction ID generation, payment link to booking |
-| Member 5 | Complaint | Customer Complaint System | Complaint model, Create complaint, Admin response, Status updates | CreateComplaintScreen, MyComplaintsScreen, ManageComplaintsScreen | Complaint lifecycle, admin response |
-| Member 6 | Visitor | Visitor / Pickup Management | Visitor model, CRUD APIs, Status updates, Optional booking link | VisitorScheduleScreen, ManageVisitorsScreen | Visitor tracking, appointment scheduling |
+| Module | Method | Endpoint | Description | Access |
+| :--- | :--- | :--- | :--- | :--- |
+| **Auth** | POST | `/api/auth/login` | Authenticate & get token | Public |
+| **Auth** | POST | `/api/auth/register` | Create new account | Public |
+| **Items** | GET | `/api/items` | List all items | Public |
+| **Items** | POST | `/api/items` | Add new item with image | Admin |
+| **Bookings** | POST | `/api/bookings` | Create rental request | Customer |
+| **Bookings** | GET | `/api/bookings` | View all rentals | Admin |
+| **Payments** | GET | `/api/payments/my` | View payment history | Customer |
+| **Complaints**| POST | `/api/complaints` | Submit feedback/issue | Customer |
+| **Visitors** | POST | `/api/visitors` | Schedule pickup/return | Customer |
 
 ---
 
-## 6. Deployment Notes
+## 7. Frontend User Experience
 
-### MongoDB Atlas Setup
-1. Go to https://www.mongodb.com/atlas and create a free cluster.
-2. Create a database user with read/write privileges.
-3. Whitelist all IP addresses (`0.0.0.0/0`) for development.
-4. Copy the connection string and paste it into `backend/.env` as `MONGO_URI`.
+### 7.1. Aesthetic Design
+- **Theme**: "Wonder" Luxury - minimal, high-contrast, editorial layout.
+- **Colors**: Ink (#000000), Cream (#F9F8F6), Camel (#C2996B).
+- **Interactions**: Smooth transitions using React Native Reanimated (where applicable) and consistent button/input styling.
 
-### Backend Deployment (Render)
-1. Push the `backend/` folder to a GitHub repository.
-2. Go to https://render.com and create a new Web Service.
-3. Connect your GitHub repo and set the root directory to `backend`.
-4. Set environment variables:
-   - `MONGO_URI`: your Atlas connection string
-   - `JWT_SECRET`: a strong random string
-   - `NODE_ENV`: production
-   - `PORT`: 5000 (Render will override this)
-5. Deploy and copy the live URL (e.g., `https://favo-api.onrender.com`).
+### 7.2. Key Screens
+- **Dashboard (Admin)**: Visual summary of bookings, items, and revenue.
+- **Home (Customer)**: Featured items and quick category navigation.
+- **Cart/Checkout**: Multi-step process for secure booking.
+- **Management Screens**: Unified table/list views for all admin CRUD operations.
 
-### Frontend Configuration
-1. Open `frontend/api/axiosConfig.ts`.
-2. Replace the placeholder URL with your deployed backend URL:
-   ```ts
-   const API_BASE_URL = 'https://favo-api.onrender.com';
-   ```
-3. Run the app locally with `bun run start` or build for distribution with EAS.
+---
 
-### Testing Live API Endpoints
-Use tools like Postman or curl to test endpoints:
-```bash
-curl -X POST https://favo-api.onrender.com/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Admin","email":"admin@favo.com","password":"password","phone":"1234567890","role":"admin"}'
+## 8. Deployment & Configuration
+
+### 8.1. Environment Configuration
+The project uses separate `.env` files for frontend and backend:
+- **Backend**: Contains sensitive keys like `JWT_SECRET` and `MONGO_URI`.
+- **Frontend**: Contains `EXPO_PUBLIC_API_URL` for pointing to the hosted backend.
+
+### 8.2. Directory Structure
+```text
+/Favo-Mobile
+├── backend/            # Express.js Server
+│   ├── controllers/    # Business Logic
+│   ├── models/         # Mongoose Schemas
+│   ├── routes/         # API Endpoints
+│   └── server.js       # Entry Point
+├── frontend/           # React Native / Expo App (formerly 'expo')
+│   ├── app/            # File-based Routes
+│   ├── components/     # UI Design System
+│   ├── api/            # Axios Service Layers
+│   └── context/        # Global State Providers
+└── README.md           # Setup Instructions
 ```
 
-### Connecting Mobile App to Hosted Backend
-- Ensure the `EXPO_PUBLIC_API_URL` environment variable or the hardcoded fallback in `axiosConfig.ts` points to the live backend.
-- Test on a physical device or emulator with internet access.
-- For iOS/Android production builds, update the API URL before building.
+---
+
+## 9. Implementation Status
+- [x] Backend API Architecture & DB Setup
+- [x] JWT Authentication & Role Middleware
+- [x] Item CRUD & Image Uploads
+- [x] Booking Logic & Workflow
+- [x] Payment History & Tracking
+- [x] Complaint & Visitor Management
+- [x] Luxury UI Theme Implementation
+- [x] Reorganized Directory Structure (`expo` -> `frontend`)
+
+---
+*Last Updated: May 4, 2026*
