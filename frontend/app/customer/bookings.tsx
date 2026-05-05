@@ -110,6 +110,13 @@ export default function MyOrdersScreen() {
               </View>
 
               <View style={styles.divider} />
+ 
+               {booking.adminNote && (
+                 <View style={styles.adminNoteBox}>
+                   <Text style={styles.adminNoteLabel}>Admin Confirmation:</Text>
+                   <Text style={styles.adminNoteText}>{booking.adminNote}</Text>
+                 </View>
+               )}
 
               <View style={styles.cardFooter}>
                 <Text style={styles.total}>Total: Rs. {booking.totalAmount}</Text>
@@ -277,6 +284,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700' as const,
     color: COLORS.mutedRose,
+  },
+  adminNoteBox: {
+    backgroundColor: COLORS.champagneGold + '10',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: COLORS.champagneGold,
+  },
+  adminNoteLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.champagneGold,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  adminNoteText: {
+    fontSize: 13,
+    color: COLORS.deepCharcoal,
+    fontStyle: 'italic',
   },
   cancelBtn: {
     flexDirection: 'row',

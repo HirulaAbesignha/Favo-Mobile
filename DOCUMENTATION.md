@@ -209,4 +209,28 @@ The project uses separate `.env` files for frontend and backend:
 - [x] Reorganized Directory Structure (`expo` -> `frontend`)
 
 ---
-*Last Updated: May 4, 2026*
+
+## 10. Recent Updates & Enhancements (May 5, 2026)
+
+### 10.1. Checkout & Payment Synchronization
+- **Automatic Payment Creation**: Integrated `paymentApi` into the checkout flow. Confirmed orders now automatically generate linked payment records.
+- **Strict Input Validation**:
+  - **Card Number**: 16-digit limit with space removal.
+  - **Expiry Date**: `MM/YY` format with auto-slash insertion.
+  - **CVV**: 3-digit numeric limit.
+  - **Billing Phone**: Strict 10-digit validation.
+
+### 10.2. Service Booking Overhaul
+- **Manual Scheduling**: Replaced date pickers with manual text entry (`DD/MM/YYYY`) and time selection (`HH:MM`) with an **AM/PM** toggle.
+- **Zero-Cost Support**: Backend now allows `totalAmount: 0` for service-only inquiries.
+
+### 10.3. Admin Interface Polish
+- **Button Redesign**: Implemented a modern, horizontal layout for approval/rejection buttons with consistent Success/Error color palettes.
+- **Real-Time Data Sync**: Added `useFocusEffect` to **Manage Complaints** and **Manage Payments** screens for automatic data refreshing upon navigation.
+- **Standardized Feedback**: Unified `adminNote` field for all approval mutations, ensuring customers see admin feedback on their dashboard.
+
+### 10.4. Technical Specifications
+Detailed validation logic and line numbers for every module are now documented in the [module.md](file:///d:/AIProjectsgit/Favo-Mobile/module.md) file.
+
+---
+*Last Updated: May 5, 2026*

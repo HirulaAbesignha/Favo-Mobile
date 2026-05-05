@@ -56,22 +56,34 @@ export default function ManageVisitorsScreen() {
                 </View>
                 <StatusBadge status={v.status} />
               </View>
-              {v.status === 'Scheduled' && (
+              {(v.status === 'Scheduled' || v.status === 'Checked-In') && (
                 <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: COLORS.successGreen + '12' }]}
-                    onPress={() => updateMutation.mutate({ id: v._id, status: 'Checked-In' })}
-                  >
-                    <CheckCircle size={16} color={COLORS.successGreen} />
-                    <Text style={[styles.actionText, { color: COLORS.successGreen }]}>Check In</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: COLORS.champagneGold + '12' }]}
-                    onPress={() => updateMutation.mutate({ id: v._id, status: 'Completed' })}
-                  >
-                    <CheckCircle size={16} color={COLORS.champagneGold} />
-                    <Text style={[styles.actionText, { color: COLORS.champagneGold }]}>Complete</Text>
-                  </TouchableOpacity>
+                  {v.status === 'Scheduled' && (
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: COLORS.successGreen + '12' }]}
+                      onPress={() => updateMutation.mutate({ id: v._id, status: 'Checked-In' })}
+                    >
+                      <CheckCircle size={16} color={COLORS.successGreen} />
+                      <Text style={[styles.actionText, { color: COLORS.successGreen }]}>Check In</Text>
+                    </TouchableOpacity>
+                  )}
+                  {v.purpose === 'Pickup' ? (
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: COLORS.successGreen + '12' }]}
+                      onPress={() => updateMutation.mutate({ id: v._id, status: 'Done' })}
+                    >
+                      <CheckCircle size={16} color={COLORS.successGreen} />
+                      <Text style={[styles.actionText, { color: COLORS.successGreen }]}>Pickup Completed</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: COLORS.champagneGold + '12' }]}
+                      onPress={() => updateMutation.mutate({ id: v._id, status: 'Completed' })}
+                    >
+                      <CheckCircle size={16} color={COLORS.champagneGold} />
+                      <Text style={[styles.actionText, { color: COLORS.champagneGold }]}>Complete</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </View>

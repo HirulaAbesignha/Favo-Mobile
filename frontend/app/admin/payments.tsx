@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { paymentApi } from '../../api/paymentApi';
 import { COLORS } from '../../constants/colors';
@@ -10,13 +12,19 @@ import { CreditCard, CheckCircle } from 'lucide-react-native';
 export default function ManagePaymentsScreen() {
   const queryClient = useQueryClient();
 
-  const { data: payments, isLoading } = useQuery({
+  const { data: payments, isLoading, refetch } = useQuery({
     queryKey: ['all-payments'],
     queryFn: async () => {
       const res = await paymentApi.getAllPayments();
       return res.data;
     },
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const updateMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>

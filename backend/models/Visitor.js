@@ -38,7 +38,7 @@ const visitorSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Scheduled', 'Checked-In', 'Completed', 'Cancelled'],
+      enum: ['Scheduled', 'Checked-In', 'Completed', 'Cancelled', 'Done'],
       default: 'Scheduled',
     },
     relatedBookingId: {

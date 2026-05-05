@@ -56,12 +56,54 @@ export default function VisitorsScreen() {
     },
   });
 
+  const handlePhoneChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
+    setPhone(cleaned);
+  };
+
+  const handleDateChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, '').slice(0, 8);
+    let formatted = cleaned;
+    if (cleaned.length > 4) {
+      formatted = cleaned.slice(0, 4) + '-' + cleaned.slice(4);
+    }
+    if (cleaned.length > 6) {
+      formatted = formatted.slice(0, 7) + '-' + cleaned.slice(6);
+    }
+    setVisitDate(formatted);
+  };
+
+  const handleTimeChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, '').slice(0, 4);
+    let formatted = cleaned;
+    if (cleaned.length > 2) {
+      formatted = cleaned.slice(0, 2) + ':' + cleaned.slice(2);
+    }
+    setVisitTime(formatted);
+  };
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!visitorName.trim()) e.visitorName = 'Name is required';
-    if (!phone.trim()) e.phone = 'Phone is required';
-    if (!visitDate.trim()) e.visitDate = 'Visit date is required';
-    if (!visitTime.trim()) e.visitTime = 'Visit time is required';
+    
+    if (!phone.trim()) {
+      e.phone = 'Phone is required';
+    } else if (phone.length !== 10) {
+      e.phone = 'Phone must be exactly 10 digits';
+    }
+
+    if (!visitDate.trim()) {
+      e.visitDate = 'Visit date is required';
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(visitDate)) {
+      e.visitDate = 'Format: YYYY-MM-DD';
+    }
+
+    if (!visitTime.trim()) {
+      e.visitTime = 'Visit time is required';
+    } else if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(visitTime)) {
+      e.visitTime = 'Format: HH:MM (24h)';
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -92,10 +134,11 @@ export default function VisitorsScreen() {
           />
           <CustomInput
             label="Phone"
-            placeholder="+1 234 567 890"
+            placeholder="0712345678"
             value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
+            onChangeText={handlePhoneChange}
+            keyboardType="numeric"
+            maxLength={10}
             error={errors.phone}
           />
           <CustomInput
@@ -109,15 +152,19 @@ export default function VisitorsScreen() {
             label="Visit Date"
             placeholder="YYYY-MM-DD"
             value={visitDate}
-            onChangeText={setVisitDate}
+            onChangeText={handleDateChange}
             error={errors.visitDate}
+            maxLength={10}
+            keyboardType="numeric"
           />
           <CustomInput
             label="Visit Time"
-            placeholder="10:00 AM"
+            placeholder="HH:MM (e.g. 14:30)"
             value={visitTime}
-            onChangeText={setVisitTime}
+            onChangeText={handleTimeChange}
             error={errors.visitTime}
+            maxLength={5}
+            keyboardType="numeric"
           />
           <CustomInput
             label="Notes (optional)"
@@ -129,6 +176,7 @@ export default function VisitorsScreen() {
           />
           <CustomButton title="Schedule Visit" onPress={handleSubmit} loading={submitting} />
         </View>
+
 
         <Text style={styles.sectionTitle}>My Visits</Text>
 

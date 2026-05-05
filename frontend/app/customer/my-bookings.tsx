@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { bookingApi } from '../../api/bookingApi';
 import { COLORS } from '../../constants/colors';
@@ -18,6 +20,12 @@ export default function MyBookingsScreen() {
       return res.data.filter((b: any) => !b.itemId || b.itemId?.itemType === 'Service');
     },
   });
+ 
+   useFocusEffect(
+     useCallback(() => {
+       refetch();
+     }, [refetch])
+   );
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -58,7 +66,9 @@ export default function MyBookingsScreen() {
           <MapPin size={14} color={COLORS.darkGrey} />
           <Text style={styles.locationText}>Favo Studio, Colombo</Text>
         </View>
-        <Text style={styles.price}>Rs. {item.totalAmount?.toLocaleString()}</Text>
+        {item.totalAmount > 0 && (
+          <Text style={styles.price}>Rs. {item.totalAmount?.toLocaleString()}</Text>
+        )}
       </View>
     </View>
   );

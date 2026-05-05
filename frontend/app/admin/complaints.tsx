@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { complaintApi } from '../../api/complaintApi';
 import { COLORS } from '../../constants/colors';
@@ -18,13 +19,19 @@ export default function ManageComplaintsScreen() {
   const [newStatus, setNewStatus] = useState('');
   const [adminResponse, setAdminResponse] = useState('');
 
-  const { data: complaints, isLoading } = useQuery({
+  const { data: complaints, isLoading, refetch } = useQuery({
     queryKey: ['all-complaints'],
     queryFn: async () => {
       const res = await complaintApi.getAllComplaints();
       return res.data;
     },
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const updateMutation = useMutation({
     mutationFn: ({ id, status, response }: { id: string; status: string; response: string }) =>

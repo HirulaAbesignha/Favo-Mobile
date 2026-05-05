@@ -29,4 +29,5 @@ export const STATUS_COLORS: Record<string, string> = {
   Maintenance: '#2A2A2A',
   Scheduled: '#C9A66B',
   'Checked-In': '#B76E79',
+  Done: '#2E7D32',
 };

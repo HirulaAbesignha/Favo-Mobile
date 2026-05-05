@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { useCart } from '../../context/CartContext';
 import { COLORS } from '../../constants/colors';
@@ -8,6 +9,7 @@ import CustomInput from '../../components/CustomInput';
 import { CheckCircle2, CreditCard, MapPin, User, ChevronLeft, Loader2, PackageCheck, ReceiptText } from 'lucide-react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingApi } from '../../api/bookingApi';
+import { paymentApi } from '../../api/paymentApi';
 
 type Step = 'billing' | 'payment' | 'review' | 'confirmation';
 
@@ -32,17 +34,27 @@ export default function CheckoutScreen() {
 
   const createOrderMutation = useMutation({
     mutationFn: async () => {
-      const today = new Date().toISOString();
-      const promises = cart.map(item => 
-        bookingApi.createBooking({
-          itemId: item._id,
-          rentalStartDate: today,
-          rentalEndDate: today,
-          totalAmount: (item.price || 0) * (item.quantity || 1),
-          notes: `Order for ${name}. Shipping to: ${address}, ${city}. Phone: ${phone}`
-        })
-      );
-      return Promise.all(promises);
+      const cartTotal = total;
+      const itemsJson = cart.map(i => ({ name: i.itemName, qty: i.quantity }));
+      
+      const res = await bookingApi.createBooking({
+        itemId: cart[0]._id,
+        rentalStartDate: new Date().toISOString(),
+        rentalEndDate: new Date().toISOString(),
+        totalAmount: cartTotal,
+        notes: `Items: ${JSON.stringify(itemsJson)}\nAddress: ${address}, ${city}\nPhone: ${phone}\nCard: ${cardNumber.slice(-4)}`
+      });
+
+      // Create a payment record automatically for successful card checkout
+      if (cartTotal > 0 && res.data._id) {
+        await paymentApi.createPayment({
+          bookingId: res.data._id,
+          amount: cartTotal,
+          paymentMethod: 'Card'
+        });
+      }
+
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-orders'] });
@@ -56,6 +68,12 @@ export default function CheckoutScreen() {
       setIsProcessing(false);
     }
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      // Logic for screen focus if needed
+    }, [])
+  );
 
   const handleNext = () => {
     if (step === 'billing') {

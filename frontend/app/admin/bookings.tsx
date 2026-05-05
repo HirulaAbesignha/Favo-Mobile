@@ -23,8 +23,8 @@ export default function ManageBookingsScreen() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, status, note }: { id: string; status: string; note?: string }) =>
-      bookingApi.updateStatus(id, status, note),
+    mutationFn: ({ id, status, adminNote }: { id: string; status: string; adminNote?: string }) =>
+      bookingApi.updateStatus(id, status, adminNote),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['items'] });
@@ -97,7 +97,7 @@ export default function ManageBookingsScreen() {
                       onPress={() => updateMutation.mutate({ 
                         id: booking._id, 
                         status: 'Approved', 
-                        note: adminNotes[booking._id] 
+                        adminNote: adminNotes[booking._id] 
                       })}
                     >
                       <CheckCircle size={18} color={COLORS.white} />
@@ -108,7 +108,7 @@ export default function ManageBookingsScreen() {
                       onPress={() => updateMutation.mutate({ 
                         id: booking._id, 
                         status: 'Rejected', 
-                        note: adminNotes[booking._id] 
+                        adminNote: adminNotes[booking._id] 
                       })}
                     >
                       <XCircle size={18} color={COLORS.errorRed} />
@@ -222,25 +222,33 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  approvalSection: {
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
     marginTop: 8,
   },
-  approveBtn: {
-    flex: 2,
-    backgroundColor: COLORS.successGreen,
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
     paddingVertical: 12,
+    borderRadius: 12,
+  },
+  approveBtn: {
+    flex: 1.5,
+    backgroundColor: COLORS.successGreen,
+  },
+  rejectBtn: {
+    flex: 1,
+    backgroundColor: COLORS.errorRed + '12',
+    borderWidth: 1,
+    borderColor: COLORS.errorRed + '20',
   },
   approveText: {
     color: COLORS.white,
     fontWeight: '700',
     fontSize: 14,
-  },
-  rejectBtn: {
-    flex: 1,
-    backgroundColor: COLORS.errorRed + '12',
-    justifyContent: 'center',
-    paddingVertical: 12,
   },
   rejectText: {
     color: COLORS.errorRed,
