@@ -14,8 +14,8 @@ export default function MyBookingsScreen() {
     queryKey: ['my-bookings'],
     queryFn: async () => {
       const res = await bookingApi.getMyBookings();
-      // Filter for Service type items
-      return res.data.filter((b: any) => b.itemId?.itemType === 'Service');
+      // Filter for Service type items OR items without an ID (general inquiries)
+      return res.data.filter((b: any) => !b.itemId || b.itemId?.itemType === 'Service');
     },
   });
 
@@ -37,8 +37,14 @@ export default function MyBookingsScreen() {
         <StatusBadge status={item.status} />
       </View>
 
-      <Text style={styles.serviceName}>{item.itemId?.itemName}</Text>
-      <Text style={styles.category}>{item.itemId?.category}</Text>
+      <Text style={styles.serviceName}>
+        {item.itemId?.itemName || 
+         item.notes?.split('\n')[0]?.replace('Service: ', '') || 
+         'Service Inquiry'}
+      </Text>
+      <Text style={styles.category}>
+        {item.itemId?.category || 'Custom Service'}
+      </Text>
 
       {item.adminNote && (
         <View style={styles.adminNoteBox}>

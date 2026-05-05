@@ -16,7 +16,7 @@ export default function ItemListScreen() {
   const [selectedCategory, setSelectedCategory] = useState((params.category as string) || '');
   const [showFilters, setShowFilters] = useState(false);
 
-  const categories = ['All', 'Dresses', 'Suits', 'Accessories', 'Shoes', 'Traditional'];
+  const categories = ['All', 'Dresses', 'Tops', 'Bottoms', 'Outerwear', 'Accessories', 'Shoes'];
 
   const { data: items, isLoading } = useQuery({
     queryKey: ['items', selectedCategory],

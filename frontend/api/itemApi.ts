@@ -3,12 +3,11 @@ import api from './axiosConfig';
 export interface ItemData {
   itemName: string;
   category: string;
-  size: string;
+  sizes: { size: string; stock: number }[];
   color: string;
   price: number;
-  depositAmount: number;
   description?: string;
-  stockQuantity: number;
+  itemType?: string;
   availabilityStatus?: string;
 }
 

@@ -61,7 +61,13 @@ export default function CustomerTabs() {
       <Tabs.Screen name="payments" options={{ href: null }} />
       <Tabs.Screen name="visitors" options={{ href: null }} />
       <Tabs.Screen name="complaints" options={{ href: null }} />
+      <Tabs.Screen name="services" options={{ href: null }} />
+      <Tabs.Screen name="my-bookings" options={{ href: null }} />
+      <Tabs.Screen name="general-booking" options={{ href: null }} />
       <Tabs.Screen name="item" options={{ href: null }} />
+      <Tabs.Screen name="item/[id]" options={{ href: null }} />
+      <Tabs.Screen name="book-service" options={{ href: null }} />
+      <Tabs.Screen name="book-service/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

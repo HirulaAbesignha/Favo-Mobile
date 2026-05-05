@@ -59,9 +59,16 @@ const updateItem = async (req, res) => {
     const item = await Item.findById(req.params.id);
     if (!item) return res.status(404).json({ message: 'Item not found' });
 
+    // Auto-calculate total stock if sizes are updated
+    if (req.body.sizes) {
+      req.body.stockQuantity = req.body.sizes.reduce((acc, s) => acc + (Number(s.stock) || 0), 0);
+    }
+
     // Auto-update availability if stock is 0
     if (req.body.stockQuantity !== undefined && req.body.stockQuantity === 0) {
       req.body.availabilityStatus = 'Maintenance';
+    } else if (req.body.stockQuantity > 0) {
+      req.body.availabilityStatus = 'Available';
     }
 
     const updatedItem = await Item.findByIdAndUpdate(req.params.id, req.body, {

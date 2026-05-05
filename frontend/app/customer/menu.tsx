@@ -28,7 +28,7 @@ export default function MenuScreen() {
     {
       title: 'Services',
       items: [
-        { icon: <CalendarClock size={20} color={COLORS.champagneGold} />, label: 'Book a Service', onPress: () => router.push('/customer/services') },
+        { icon: <CalendarClock size={20} color={COLORS.champagneGold} />, label: 'Book a Service', onPress: () => router.push('/customer/general-booking') },
         { icon: <CalendarClock size={20} color={COLORS.champagneGold} />, label: 'My Bookings', onPress: () => router.push('/customer/my-bookings') },
         { icon: <MessageSquare size={20} color={COLORS.champagneGold} />, label: 'Complaints', onPress: () => router.push('/customer/complaints') },
       ]

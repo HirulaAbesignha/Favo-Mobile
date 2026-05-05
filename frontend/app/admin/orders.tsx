@@ -7,18 +7,18 @@ import StatusBadge from '../../components/StatusBadge';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import CustomInput from '../../components/CustomInput';
-import { CheckCircle, XCircle, ShoppingBag, MessageCircle } from 'lucide-react-native';
+import { CheckCircle, XCircle, ShoppingBag } from 'lucide-react-native';
 
-export default function ManageBookingsScreen() {
+export default function ManageOrdersScreen() {
   const queryClient = useQueryClient();
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['all-bookings'],
+    queryKey: ['all-orders'],
     queryFn: async () => {
       const res = await bookingApi.getAllBookings();
-      // Filter for Service Bookings (Inquiries have totalAmount 0 and no itemId)
-      return res.data.filter((b: any) => !b.itemId && b.totalAmount === 0);
+      // Filter for Item Orders (Any paid transaction is an order)
+      return res.data.filter((b: any) => b.totalAmount > 0);
     },
   });
 
@@ -26,7 +26,7 @@ export default function ManageBookingsScreen() {
     mutationFn: ({ id, status, note }: { id: string; status: string; note?: string }) =>
       bookingApi.updateStatus(id, status, note),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['all-orders'] });
       queryClient.invalidateQueries({ queryKey: ['items'] });
     },
     onError: (err: any) => {
@@ -39,25 +39,23 @@ export default function ManageBookingsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Manage Bookings</Text>
+        <Text style={styles.title}>Manage Orders</Text>
       </View>
 
       <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
         {bookings?.length === 0 ? (
-          <EmptyState message="No bookings found" />
+          <EmptyState message="No orders found" />
         ) : (
           bookings?.map((booking: any) => (
             <View key={booking._id} style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.iconBox}>
-                  <MessageCircle size={20} color={COLORS.champagneGold} />
+                  <ShoppingBag size={20} color={COLORS.champagneGold} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <View style={styles.titleRow}>
-                    <Text style={styles.itemName}>
-                      {booking.notes?.split('\n')[0]?.replace('Service: ', '') || 'General Inquiry'}
-                    </Text>
-                  </View>
+                  <Text style={styles.itemName}>
+                    {booking.itemId?.itemName || 'Product'}
+                  </Text>
                   <Text style={styles.customer}>{booking.userId?.name || 'Customer'}</Text>
                   <Text style={styles.date}>
                     Date: {new Date(booking.bookingDate || booking.createdAt).toLocaleDateString()}
@@ -68,28 +66,20 @@ export default function ManageBookingsScreen() {
 
               <View style={styles.divider} />
 
-              {booking.notes && (
-                <View style={styles.notesBox}>
-                  <Text style={styles.notesTitle}>Inquiry Details:</Text>
-                  <Text style={styles.notesText}>{booking.notes}</Text>
-                </View>
-              )}
-
-              <View style={styles.divider} />
-
               <View style={styles.cardFooter}>
                  <Text style={styles.total}>Rs. {booking.totalAmount}</Text>
+                 {booking.itemId?.size && (
+                   <Text style={styles.sizeText}>Size: {booking.itemId.size}</Text>
+                 )}
               </View>
 
               {booking.status === 'Pending' && (
                 <View style={styles.approvalSection}>
-                  <Text style={styles.sectionLabel}>Approval Details</Text>
+                  <Text style={styles.sectionLabel}>Order Processing</Text>
                   <CustomInput 
-                    placeholder="Add a confirmation note for the client..." 
+                    placeholder="Add a processing note..." 
                     value={adminNotes[booking._id] || ''} 
                     onChangeText={(text) => setAdminNotes(prev => ({ ...prev, [booking._id]: text }))}
-                    multiline
-                    numberOfLines={2}
                   />
                   <View style={styles.actions}>
                     <TouchableOpacity
@@ -101,7 +91,7 @@ export default function ManageBookingsScreen() {
                       })}
                     >
                       <CheckCircle size={18} color={COLORS.white} />
-                      <Text style={styles.approveText}>Approve Request</Text>
+                      <Text style={styles.approveText}>Approve Order</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionBtn, styles.rejectBtn]}
@@ -120,7 +110,7 @@ export default function ManageBookingsScreen() {
 
               {booking.adminNote && booking.status !== 'Pending' && (
                 <View style={styles.adminNoteBox}>
-                  <Text style={styles.notesTitle}>Admin Confirmation Note:</Text>
+                  <Text style={styles.notesTitle}>Admin Note:</Text>
                   <Text style={styles.notesText}>{booking.adminNote}</Text>
                 </View>
               )}
@@ -195,24 +185,20 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGrey,
     marginVertical: 12,
   },
-  titleRow: {
+  cardFooter: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
   },
-  serviceTag: {
-    backgroundColor: COLORS.mutedRose + '15',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: COLORS.mutedRose + '30',
-  },
-  serviceTagText: {
-    fontSize: 10,
-    fontWeight: '700',
+  total: {
+    fontSize: 16,
+    fontWeight: '700' as const,
     color: COLORS.mutedRose,
-    textTransform: 'uppercase',
+  },
+  sizeText: {
+    fontSize: 13,
+    color: COLORS.darkGrey,
+    fontWeight: '600',
   },
   sectionLabel: {
     fontSize: 12,
@@ -225,11 +211,23 @@ const styles = StyleSheet.create({
   approvalSection: {
     marginTop: 8,
   },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
   approveBtn: {
     flex: 2,
     backgroundColor: COLORS.successGreen,
     justifyContent: 'center',
-    paddingVertical: 12,
   },
   approveText: {
     color: COLORS.white,
@@ -240,7 +238,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.errorRed + '12',
     justifyContent: 'center',
-    paddingVertical: 12,
   },
   rejectText: {
     color: COLORS.errorRed,
@@ -255,5 +252,16 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: COLORS.successGreen,
   },
+  notesTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.darkGrey,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  notesText: {
+    fontSize: 13,
+    color: COLORS.deepCharcoal,
+    lineHeight: 18,
+  },
 });
-// Favo file

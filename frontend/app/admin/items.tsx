@@ -11,7 +11,11 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import * as ImagePicker from 'expo-image-picker';
 import { Plus, Trash2, Image as ImageIcon } from 'lucide-react-native';
-import { Platform } from 'react-native';
+import { Platform, Modal, FlatList } from 'react-native';
+import { ChevronDown, Check } from 'lucide-react-native';
+
+const CATEGORIES = ['Dresses', 'Tops', 'Bottoms', 'Outerwear', 'Accessories', 'Shoes'];
+const SIZES = ['S', 'M', 'L'];
 
 export default function ManageItemsScreen() {
   const router = useRouter();
@@ -19,13 +23,13 @@ export default function ManageItemsScreen() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
-  const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [price, setPrice] = useState('');
-  const [deposit, setDeposit] = useState('');
-  const [stock, setStock] = useState('');
   const [desc, setDesc] = useState('');
-  const [type, setType] = useState<'Product' | 'Service'>('Product');
+  const [type] = useState<'Product'>('Product');
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [sizeStocks, setSizeStocks] = useState<{ [key: string]: string }>({});
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
 
@@ -55,13 +59,12 @@ export default function ManageItemsScreen() {
       const res = await itemApi.createItem({
         itemName: name,
         category,
-        size,
+        sizes: selectedSizes.map(s => ({ size: s, stock: Number(sizeStocks[s] || 0) })),
         color,
         price: Number(price),
         description: desc,
-        stockQuantity: Number(stock),
         itemType: type,
-      });
+      } as any);
       
       const newItem = res.data;
 
@@ -104,13 +107,12 @@ export default function ManageItemsScreen() {
       const res = await itemApi.updateItem(editingItem._id, {
         itemName: name,
         category,
-        size,
+        sizes: selectedSizes.map(s => ({ size: s, stock: Number(sizeStocks[s] || 0) })),
         color,
         price: Number(price),
         description: desc,
-        stockQuantity: Number(stock),
         itemType: type,
-      });
+      } as any);
 
       if (imageUri && !imageUri.startsWith('http')) {
         const formData = new FormData();
@@ -160,34 +162,38 @@ export default function ManageItemsScreen() {
   const resetForm = () => {
     setName('');
     setCategory('');
-    setSize('');
+    setSelectedSizes([]);
+    setSizeStocks({});
     setColor('');
     setPrice('');
-    setDeposit('');
-    setStock('');
     setDesc('');
     setImageUri(null);
     setEditingItem(null);
-    setType('Product');
   };
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
     setName(item.itemName);
     setCategory(item.category);
-    setSize(item.size);
+    
+    const sizes = item.sizes || [];
+    setSelectedSizes(sizes.map((s: any) => s.size));
+    const stocks: { [key: string]: string } = {};
+    sizes.forEach((s: any) => {
+      stocks[s.size] = s.stock.toString();
+    });
+    setSizeStocks(stocks);
+
     setColor(item.color);
     setPrice(item.price.toString());
-    setStock(item.stockQuantity.toString());
     setDesc(item.description || '');
     setImageUri(item.image || null);
-    setType(item.itemType || 'Product');
     setShowForm(true);
   };
 
   const handleCreate = () => {
-    if (!name || !category || !size || !color || !price || !stock) {
-      Alert.alert('Error', 'Please fill all required fields');
+    if (!name || !category || selectedSizes.length === 0 || !color || !price) {
+      Alert.alert('Error', 'Please fill all required fields and select at least one size');
       return;
     }
     if (editingItem) {
@@ -219,36 +225,55 @@ export default function ManageItemsScreen() {
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>{editingItem ? 'Edit Item' : 'Add New Item'}</Text>
             <CustomInput label="Item Name" placeholder="Elegant Evening Gown" value={name} onChangeText={setName} />
-            <CustomInput label="Category" placeholder="Dresses" value={category} onChangeText={setCategory} />
-            
-            <View style={styles.typeSelector}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Category</Text>
               <TouchableOpacity 
-                style={[styles.typeBtn, type === 'Product' && styles.typeBtnActive]} 
-                onPress={() => setType('Product')}
+                style={styles.dropdown} 
+                onPress={() => setShowCategoryModal(true)}
               >
-                <Text style={[styles.typeText, type === 'Product' && styles.typeTextActive]}>Product</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.typeBtn, type === 'Service' && styles.typeBtnActive]} 
-                onPress={() => setType('Service')}
-              >
-                <Text style={[styles.typeText, type === 'Service' && styles.typeTextActive]}>Service</Text>
+                <Text style={[styles.dropdownText, !category && { color: COLORS.darkGrey }]}>
+                  {category || 'Select Category'}
+                </Text>
+                <ChevronDown size={20} color={COLORS.darkGrey} />
               </TouchableOpacity>
             </View>
+
+            <Text style={styles.label}>Sizes & Stock</Text>
+            <View style={styles.sizeSelector}>
+              {SIZES.map(s => (
+                <TouchableOpacity 
+                  key={s} 
+                  style={[styles.sizeBtn, selectedSizes.includes(s) && styles.sizeBtnActive]}
+                  onPress={() => {
+                    if (selectedSizes.includes(s)) {
+                      setSelectedSizes(selectedSizes.filter(sz => sz !== s));
+                    } else {
+                      setSelectedSizes([...selectedSizes, s]);
+                    }
+                  }}
+                >
+                  <Text style={[styles.sizeBtnText, selectedSizes.includes(s) && styles.sizeBtnTextActive]}>{s}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {selectedSizes.map(s => (
+              <CustomInput 
+                key={s}
+                label={`Stock for Size ${s}`}
+                placeholder="0"
+                value={sizeStocks[s] || ''}
+                onChangeText={(val) => setSizeStocks({ ...sizeStocks, [s]: val })}
+                keyboardType="numeric"
+              />
+            ))}
+
             <View style={styles.row}>
               <View style={{ flex: 1, marginRight: 8 }}>
-                <CustomInput label="Size" placeholder="M" value={size} onChangeText={setSize} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 8 }}>
                 <CustomInput label="Color" placeholder="Black" value={color} onChangeText={setColor} />
               </View>
-            </View>
-            <View style={styles.row}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <CustomInput label="Price (Rs.)" placeholder="5000" value={price} onChangeText={setPrice} keyboardType="numeric" />
-              </View>
               <View style={{ flex: 1, marginLeft: 8 }}>
-                <CustomInput label="Stock" placeholder="5" value={stock} onChangeText={setStock} keyboardType="numeric" />
+                <CustomInput label="Price (Rs.)" placeholder="5000" value={price} onChangeText={setPrice} keyboardType="numeric" />
               </View>
             </View>
             <CustomInput label="Description" placeholder="Description..." value={desc} onChangeText={setDesc} multiline numberOfLines={3} />
@@ -300,6 +325,37 @@ export default function ManageItemsScreen() {
           )}
         </View>
       </ScrollView>
+
+      <Modal visible={showCategoryModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Category</Text>
+              <TouchableOpacity onPress={() => setShowCategoryModal(false)}>
+                <Text style={styles.doneText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={CATEGORIES}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={styles.categoryItem} 
+                  onPress={() => {
+                    setCategory(item);
+                    setShowCategoryModal(false);
+                  }}
+                >
+                  <Text style={[styles.categoryText, category === item && styles.categoryTextSelected]}>
+                    {item}
+                  </Text>
+                  {category === item && <Check size={20} color={COLORS.champagneGold} />}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -395,6 +451,103 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  label: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: COLORS.deepCharcoal,
+    marginBottom: 8,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  dropdown: {
+    height: 50,
+    backgroundColor: COLORS.softIvory,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: COLORS.lightGrey + '40',
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: COLORS.deepCharcoal,
+  },
+  sizeSelector: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  sizeBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.softIvory,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.lightGrey + '40',
+  },
+  sizeBtnActive: {
+    backgroundColor: COLORS.champagneGold,
+    borderColor: COLORS.champagneGold,
+  },
+  sizeBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.deepCharcoal,
+  },
+  sizeBtnTextActive: {
+    color: COLORS.white,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    minHeight: 400,
+    paddingTop: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.softIvory,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.deepCharcoal,
+  },
+  doneText: {
+    color: COLORS.champagneGold,
+    fontWeight: '700',
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.softIvory,
+  },
+  categoryText: {
+    fontSize: 16,
+    color: COLORS.darkGrey,
+  },
+  categoryTextSelected: {
+    color: COLORS.champagneGold,
+    fontWeight: '700',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -408,35 +561,6 @@ const styles = StyleSheet.create({
     color: COLORS.errorRed,
     fontSize: 14,
     fontWeight: '600',
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.softIvory,
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
-  },
-  typeBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  typeBtnActive: {
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.deepCharcoal,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  typeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.darkGrey,
-  },
-  typeTextActive: {
-    color: COLORS.champagneGold,
   },
 });
 // Favo file

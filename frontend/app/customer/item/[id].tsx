@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { itemApi } from '../../../api/itemApi';
@@ -16,6 +16,7 @@ export default function ItemDetailsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { addToCart } = useCart();
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   const { data: item, isLoading } = useQuery({
     queryKey: ['item', id],
@@ -30,6 +31,11 @@ export default function ItemDetailsScreen() {
       Alert.alert('Unavailable', 'This item is currently not available.');
       return;
     }
+
+    if (!selectedSize) {
+      Alert.alert('Selection Required', 'Please select a size before adding to cart.');
+      return;
+    }
     
     addToCart({
       _id: item._id,
@@ -37,7 +43,7 @@ export default function ItemDetailsScreen() {
       price: item.price,
       image: item.image,
       quantity: 1,
-      size: item.size,
+      size: selectedSize,
       color: item.color,
     });
     
@@ -73,20 +79,44 @@ export default function ItemDetailsScreen() {
 
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
-            <Ruler size={18} color={COLORS.champagneGold} />
-            <Text style={styles.infoLabel}>Size</Text>
-            <Text style={styles.infoValue}>{item.size}</Text>
-          </View>
-          <View style={styles.infoItem}>
             <Palette size={18} color={COLORS.champagneGold} />
             <Text style={styles.infoLabel}>Color</Text>
             <Text style={styles.infoValue}>{item.color}</Text>
           </View>
           <View style={styles.infoItem}>
             <ShieldCheck size={18} color={COLORS.champagneGold} />
-            <Text style={styles.infoLabel}>Stock</Text>
-            <Text style={styles.infoValue}>{item.stockQuantity}</Text>
+            <Text style={styles.infoLabel}>Total Stock</Text>
+            <Text style={styles.infoValue}>{item.sizes?.reduce((acc: number, s: any) => acc + s.stock, 0) || 0}</Text>
           </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Select Size</Text>
+        <View style={styles.sizeRow}>
+          {item.sizes?.map((s: any) => (
+            <TouchableOpacity 
+              key={s.size} 
+              style={[
+                styles.sizeChip, 
+                selectedSize === s.size && styles.sizeChipActive,
+                s.stock === 0 && styles.sizeChipDisabled
+              ]}
+              onPress={() => s.stock > 0 && setSelectedSize(s.size)}
+              disabled={s.stock === 0}
+            >
+              <Text style={[
+                styles.sizeText, 
+                selectedSize === s.size && styles.sizeTextActive,
+                s.stock === 0 && styles.sizeTextDisabled
+              ]}>
+                {s.size}
+              </Text>
+              {s.stock > 0 && s.stock < 5 && (
+                <View style={styles.lowStockBadge}>
+                  <Text style={styles.lowStockText}>{s.stock} left</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={styles.priceCard}>
@@ -204,6 +234,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700' as const,
     color: COLORS.mutedRose,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: COLORS.deepCharcoal,
+    marginBottom: 12,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 1,
+  },
+  sizeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 24,
+  },
+  sizeChip: {
+    minWidth: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.lightGrey + '40',
+    position: 'relative',
+  },
+  sizeChipActive: {
+    backgroundColor: COLORS.champagneGold,
+    borderColor: COLORS.champagneGold,
+  },
+  sizeChipDisabled: {
+    backgroundColor: COLORS.softIvory,
+    opacity: 0.5,
+  },
+  sizeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.deepCharcoal,
+  },
+  sizeTextActive: {
+    color: COLORS.white,
+  },
+  sizeTextDisabled: {
+    color: COLORS.darkGrey,
+    textDecorationLine: 'line-through',
+  },
+  lowStockBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: COLORS.mutedRose,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  lowStockText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: COLORS.white,
   },
 });
 // Favo file

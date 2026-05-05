@@ -10,7 +10,7 @@ interface Props {
     price: number;
     availabilityStatus: string;
     image?: string;
-    size?: string;
+    sizes?: { size: string; stock: number }[];
     color?: string;
   };
   onPress: () => void;
@@ -35,7 +35,7 @@ export default function ItemCard({ item, onPress }: Props) {
         <Text style={styles.category}>{item.category}</Text>
         <Text style={styles.name}>{item.itemName}</Text>
         <Text style={styles.meta}>
-          {item.size} · {item.color}
+          {item.sizes?.map(s => s.size).join(', ')} · {item.color}
         </Text>
         <Text style={styles.price}>Rs. {(item.price || 0).toLocaleString()}</Text>
       </View>

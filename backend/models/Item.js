@@ -17,10 +17,12 @@ const itemSchema = new mongoose.Schema(
       required: [true, 'Item name is required'],
       trim: true,
     },
-    size: {
-      type: String,
-      trim: true,
-    },
+    sizes: [
+      {
+        size: { type: String, required: true },
+        stock: { type: Number, default: 0, min: 0 },
+      }
+    ],
     color: {
       type: String,
       trim: true,
@@ -40,8 +42,7 @@ const itemSchema = new mongoose.Schema(
     },
     stockQuantity: {
       type: Number,
-      default: 1,
-      min: [0, 'Stock cannot be negative'],
+      default: 0,
     },
     availabilityStatus: {
       type: String,
@@ -58,5 +59,12 @@ const itemSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+itemSchema.pre('save', function (next) {
+  if (this.sizes && this.sizes.length > 0) {
+    this.stockQuantity = this.sizes.reduce((acc, s) => acc + s.stock, 0);
+  }
+  next();
+});
 
 module.exports = mongoose.model('Item', itemSchema);
