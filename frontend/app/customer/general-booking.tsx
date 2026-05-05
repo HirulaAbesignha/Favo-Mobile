@@ -11,7 +11,9 @@ import { Calendar, ChevronLeft, User, Phone, Sparkles, Clock, ShieldCheck } from
 export default function GeneralBookingScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [timePeriod, setTimePeriod] = useState<'AM' | 'PM'>('AM');
   const [serviceName, setServiceName] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('');
@@ -32,16 +34,23 @@ export default function GeneralBookingScreen() {
   });
 
   const handleBooking = () => {
-    if (!serviceName || !customerName || !phone) {
-      Alert.alert('Required Fields', 'Please fill in the service name, your name, and phone number.');
+    if (!serviceName || !customerName || !phone || !selectedDate || !selectedTime) {
+      Alert.alert('Required Fields', 'Please fill in all details including date and time.');
+      return;
+    }
+
+    // Phone validation (10 digits)
+    const cleanPhone = phone.replace(/[^\d]/g, '');
+    if (cleanPhone.length !== 10) {
+      Alert.alert('Invalid Phone', 'Please enter a valid 10-digit phone number.');
       return;
     }
 
     bookingMutation.mutate({
-      rentalStartDate: selectedDate.toISOString(),
-      rentalEndDate: selectedDate.toISOString(),
-      totalAmount: 0, // Inquiries don't have a fixed price upfront
-      notes: `Service: ${serviceName}\nName: ${customerName}\nPhone: ${phone}\nRequirements: ${requirements}`
+      rentalStartDate: new Date().toISOString(), // Fallback
+      rentalEndDate: new Date().toISOString(),
+      totalAmount: 0, 
+      notes: `Service: ${serviceName}\nPreferred Date: ${selectedDate}\nPreferred Time: ${selectedTime} ${timePeriod}\nName: ${customerName}\nPhone: ${phone}\nRequirements: ${requirements}`
     });
   };
 
@@ -78,16 +87,44 @@ export default function GeneralBookingScreen() {
             <Calendar size={20} color={COLORS.champagneGold} />
             <Text style={styles.sectionTitle}>Preferred Date</Text>
           </View>
-          <View style={styles.datePickerStub}>
-            <Text style={styles.dateText}>
-              {selectedDate.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </Text>
-            <Text style={styles.dateSub}>Selected Date for Session</Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <CustomInput 
+                placeholder="DD/MM/YYYY" 
+                value={selectedDate} 
+                onChangeText={(text) => {
+                  const clean = text.replace(/[^\d]/g, '');
+                  if (clean.length <= 2) setSelectedDate(clean);
+                  else if (clean.length <= 4) setSelectedDate(`${clean.slice(0, 2)}/${clean.slice(2)}`);
+                  else setSelectedDate(`${clean.slice(0, 2)}/${clean.slice(2, 4)}/${clean.slice(4, 8)}`);
+                }} 
+                maxLength={10}
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={{ flex: 1.2 }}>
+              <View style={{ flexDirection: 'row', gap: 6, alignItems: 'flex-end' }}>
+                <View style={{ flex: 1 }}>
+                  <CustomInput 
+                    placeholder="HH:MM" 
+                    value={selectedTime} 
+                    onChangeText={(text) => {
+                      const clean = text.replace(/[^\d]/g, '');
+                      if (clean.length <= 2) setSelectedTime(clean);
+                      else setSelectedTime(`${clean.slice(0, 2)}:${clean.slice(2, 4)}`);
+                    }} 
+                    maxLength={5}
+                    keyboardType="numeric"
+                  />
+                </View>
+                <TouchableOpacity 
+                  style={styles.periodBtn} 
+                  onPress={() => setTimePeriod(p => p === 'AM' ? 'PM' : 'AM')}
+                >
+                  <Text style={styles.periodText}>{timePeriod}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -108,7 +145,8 @@ export default function GeneralBookingScreen() {
               placeholder="07X XXX XXXX" 
               value={phone} 
               onChangeText={setPhone} 
-              keyboardType="phone-pad"
+              keyboardType="numeric"
+              maxLength={10}
             />
             <CustomInput 
               label="Additional Notes" 
@@ -235,5 +273,19 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 14,
     color: COLORS.deepCharcoal,
+  },
+  periodBtn: {
+    backgroundColor: COLORS.champagneGold,
+    height: 48,
+    width: 50,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12, // Align with CustomInput margin
+  },
+  periodText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

@@ -11,6 +11,8 @@ interface Props {
   error?: string;
   multiline?: boolean;
   numberOfLines?: number;
+  maxLength?: number;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
 }
 
 export default function CustomInput({
@@ -23,6 +25,8 @@ export default function CustomInput({
   error,
   multiline,
   numberOfLines,
+  maxLength,
+  autoCapitalize = 'none',
 }: Props) {
   return (
     <View style={styles.container}>
@@ -41,6 +45,8 @@ export default function CustomInput({
         keyboardType={keyboardType}
         multiline={multiline}
         numberOfLines={numberOfLines}
+        maxLength={maxLength}
+        autoCapitalize={autoCapitalize}
       />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>

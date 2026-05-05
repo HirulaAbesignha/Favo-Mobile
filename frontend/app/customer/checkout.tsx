@@ -60,15 +60,39 @@ export default function CheckoutScreen() {
   const handleNext = () => {
     if (step === 'billing') {
       if (!name || !address || !phone || !city) {
-        Alert.alert('Error', 'Please fill in all billing details');
+        Alert.alert('Required Fields', 'Please fill in all billing details');
+        return;
+      }
+
+      const cleanPhone = phone.replace(/[^\d]/g, '');
+      if (cleanPhone.length !== 10) {
+        Alert.alert('Invalid Phone', 'Please enter a valid 10-digit phone number');
         return;
       }
       setStep('payment');
     } else if (step === 'payment') {
       if (!cardNumber || !expiry || !cvv || !cardName) {
-        Alert.alert('Error', 'Please enter all payment details');
+        Alert.alert('Required Fields', 'Please enter all payment details');
         return;
       }
+
+      // Basic length validations
+      const cleanCard = cardNumber.replace(/\s/g, '');
+      if (cleanCard.length < 16) {
+        Alert.alert('Invalid Card', 'Card number must be 16 digits');
+        return;
+      }
+
+      if (expiry.length < 5 || !expiry.includes('/')) {
+        Alert.alert('Invalid Expiry', 'Expiry date must be in MM/YY format');
+        return;
+      }
+
+      if (cvv.length < 3) {
+        Alert.alert('Invalid CVV', 'CVV must be 3 digits');
+        return;
+      }
+
       setStep('review');
     } else if (step === 'review') {
       setIsProcessing(true);
@@ -134,7 +158,7 @@ export default function CheckoutScreen() {
               <Text style={styles.sectionTitle}>Billing Information</Text>
             </View>
             <CustomInput label="Full Name" value={name} onChangeText={setName} placeholder="John Doe" />
-            <CustomInput label="Phone Number" value={phone} onChangeText={setPhone} placeholder="077 123 4567" keyboardType="phone-pad" />
+            <CustomInput label="Phone Number" value={phone} onChangeText={setPhone} placeholder="07X XXX XXXX" keyboardType="numeric" maxLength={10} />
             <CustomInput label="Delivery Address" value={address} onChangeText={setAddress} placeholder="No. 123, Galle Road" multiline />
             <CustomInput label="City" value={city} onChangeText={setCity} placeholder="Colombo" />
           </View>
@@ -151,7 +175,21 @@ export default function CheckoutScreen() {
               <CustomInput label="Card Number" placeholder="**** **** **** 4242" value={cardNumber} onChangeText={setCardNumber} keyboardType="numeric" maxLength={16} />
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <View style={{ flex: 1 }}>
-                  <CustomInput label="Expiry Date" placeholder="MM/YY" value={expiry} onChangeText={setExpiry} maxLength={5} />
+                  <CustomInput 
+                    label="Expiry Date" 
+                    placeholder="MM/YY" 
+                    value={expiry} 
+                    onChangeText={(text) => {
+                      const clean = text.replace(/[^\d]/g, '');
+                      if (clean.length <= 2) {
+                        setExpiry(clean);
+                      } else {
+                        setExpiry(`${clean.slice(0, 2)}/${clean.slice(2, 4)}`);
+                      }
+                    }} 
+                    maxLength={5} 
+                    keyboardType="numeric"
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
                   <CustomInput label="CVV" placeholder="***" value={cvv} onChangeText={setCvv} keyboardType="numeric" maxLength={3} secureTextEntry />

@@ -9,7 +9,7 @@ const createBooking = async (req, res) => {
   try {
     const { itemId, rentalStartDate, rentalEndDate, totalAmount, notes } = req.body;
 
-    if (!rentalStartDate || !rentalEndDate || !totalAmount) {
+    if (!rentalStartDate || !rentalEndDate || totalAmount === undefined || totalAmount === null) {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
